@@ -1,0 +1,11 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  course: 
+  unit: 
+  optional: MyString
+
+two:
+  course: 
+  unit: 
+  optional: MyString
