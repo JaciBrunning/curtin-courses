@@ -1,0 +1,11 @@
+**/tmp/
+**/log/
+**/node_modules/
+**/storage/
+
+config/master.key
+
+ignored/
+
+/*.yml
+/*.toml
