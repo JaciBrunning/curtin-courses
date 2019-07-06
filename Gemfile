@@ -14,12 +14,22 @@ gem 'turbolinks', '~> 5'
 gem 'jbuilder', '~> 2.5'
 
 gem 'sidekiq', '5.2.6'
+gem 'sidekiq-enqueuer', '2.1.1'
 
 gem "google-cloud-storage", require: false
 
 gem 'bootsnap', '>= 1.1.0', require: false
 
 gem 'prometheus-client'
+
+gem 'nokogiri', '~> 1.10.3'
+gem 'active_model_serializers', '~> 0.10.9'
+gem 'goldiloader', '~> 3.1.1'
+
+gem 'webpacker'
+gem 'react-rails'
+gem 'bootstrap'
+gem 'rails-fontawesome5'
 
 group :development, :test do
   gem 'byebug', platforms: [:mri, :mingw, :x64_mingw]
