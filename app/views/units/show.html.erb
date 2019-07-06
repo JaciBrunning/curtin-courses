@@ -1,0 +1,15 @@
+<h1> <%= @unit.code %> - <%= @unit.name %> </h1>
+<% prereqs = JSON.parse @unit.prereqs %>
+
+<p>
+<i class="fas fa-book">&nbsp;</i> <a href="<%= @unit.url %>" target="_blank"> Handbook </a> <br />
+<i class="fas fa-coins">&nbsp;</i> <%= @unit.credits %> Credits <br />
+<i class="fas fa-graduation-cap"></i> <%= pluralize(@unit.courses.count, "Course") %> <br />
+</p>
+
+<%= 
+  react_component("UnitGraph",
+    hide_external: false,
+    units: [{ unit: serialize(@unit).serializable_hash[:unit]}],
+    unit_base_url: unit_path(":code")
+  ) %>

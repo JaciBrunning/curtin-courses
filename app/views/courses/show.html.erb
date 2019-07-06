@@ -1,0 +1,23 @@
+<h1> <%= @course.code %> - <%= @course.name %> </h1>
+
+<p>
+<i class="fas fa-book">&nbsp;</i> <a href="<%= @course.url %>" target="_blank"> Handbook </a> <br />
+<% if @course.stream_parent %>
+<i class="fas fa-stream">&nbsp;</i> Stream of <a href="<%= course_path(@course.stream_parent.code) %>"> <%= @course.stream_parent.code %> - <%= @course.stream_parent.name %> </a> <br />
+<% end %>
+<% if @course.streams.count > 0 %>
+<ul class="list-group">
+  <li class="list-group-item"> <span class="tip" data-toggle="tooltip" data-placement="top" title="Select a stream to see its unit breakdown."><strong>Streams</strong></span> </li>
+  <% @course.streams.each do |stream| %>
+    <li class="list-group-item"> <a href="<%= course_path(stream.code) %>"> <%= stream.code %> - <%= stream.name %> </a> </li>
+  <% end %>
+</ul>
+<% end %>
+</p>
+
+<%=
+  react_component("UnitGraph", 
+    hide_external: true,
+    unit_base_url: unit_path(":code"),
+    units: serialize(@course, units: true, include: '**').serializable_hash[:course][:course_units]
+  ) %>

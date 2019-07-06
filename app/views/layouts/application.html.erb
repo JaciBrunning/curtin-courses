@@ -8,7 +8,7 @@
     <%= stylesheet_link_tag    'application', media: 'all', 'data-turbolinks-track': 'reload' %>
     <%= javascript_include_tag 'application', 'data-turbolinks-track': 'reload' %>
     <%= javascript_pack_tag    'application' %>
-    <%= stylesheet_pack_tag    'application' %>
+    <%= stylesheet_pack_tag    'styles' %>
   </head>
 
   <body>
@@ -21,8 +21,15 @@
           </li>
         </ul>
       </div>
+
+      <ul class="navbar-nav ml-auto">
+        <li class="nav-item"  style="width: 500px;"> <%= react_component("Search", { baseUrl: root_path, searchUrl: api_search_path }) %> </li>
+      </ul>
     </header>
 
-    <%= yield %>
+    <div class="container">
+      <br />
+      <%= yield %>
+    </div>
   </body>
 </html>

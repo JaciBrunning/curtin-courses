@@ -31,6 +31,7 @@ class UpdateSingleCourseJob < ApplicationJob
         UpdateSingleCourseJob.perform_now org_url, course.code
       else
         # Is a unit - do the work in (avoid loading more jobs)
+        @current = org_url
         update_unit org_url, course, entry[:optional]
         # UpdateSingleUnitJob.perform_now org_url, course.id, entry[:optional]
       end
@@ -135,9 +136,10 @@ class UpdateSingleCourseJob < ApplicationJob
       #    AND, OR (reduction)
       #    Unit
       #    Admission into course (we ignore this for the most part)
-      tokens = final_str.scan(/^([[:space:]]*)(AND|OR|([a-zA-Z]{4}?\d{4,6}\s\(v\.\d+\))|Admission)/).flatten
+      tokens = final_str.scan(/^([[:space:]]*)(AND|OR|([a-zA-Z]{0,4}(\d{4,6}|\-[A-Z]{3,8})\s\(v\.\d+\))|Admission)/).flatten
       unless tokens.empty?
-        type = tokens[2].nil? ? (tokens[1] == "Admission" ? :admission : :reduction) : :unit
+        # If it contains a - in the name, it's a course dependency
+        type = tokens[2].nil? ? (tokens[1] == "Admission" ? :admission : :reduction) : (tokens[1].include?("-") ? :admission : :unit)
         level = tokens[0].length
         name = tokens[1].split(" ").first
 
@@ -184,6 +186,7 @@ class UpdateSingleCourseJob < ApplicationJob
         stack.push token
       else
         operands = [stack.pop, stack.pop]
+        puts operands.inspect
         const_operands = operands.map { |x| x.is_a?(Hash) && (x[:type] == :admission || (x[:type] == :unit && x[:name] =~ /^\d{4,6}$/)) }
 
         if const_operands[0] 

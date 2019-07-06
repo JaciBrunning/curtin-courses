@@ -10,8 +10,13 @@
     "popper.js": "^1.15.0",
     "prop-types": "^15.7.2",
     "react": "^16.8.6",
+    "react-bootstrap-typeahead": "^3.4.5",
+    "react-collapse": "^4.0.3",
     "react-dom": "^16.8.6",
-    "react_ujs": "^2.5.0"
+    "react-graph-vis": "^1.0.2",
+    "react-motion": "^0.5.2",
+    "react_ujs": "^2.5.0",
+    "truncate": "^2.1.0"
   },
   "devDependencies": {
     "webpack-dev-server": "^3.7.2"
