@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>CurtinCourses</title>
+    <title>Curtin Courses</title>
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
@@ -11,6 +11,17 @@
   </head>
 
   <body>
+    <header class="navbar navbar-expand-lg navbar-dark bg-dark">
+      <a class="navbar-brand" href="#"> Curtin Courses Index </a>
+      <div class="navbar-nav-scroll">
+        <ul class="navbar-nav">
+          <li class="nav-item">
+            <a class="nav-link" href="<%= root_path %>"> Home </a>
+          </li>
+        </ul>
+      </div>
+    </header>
+
     <%= yield %>
   </body>
 </html>
