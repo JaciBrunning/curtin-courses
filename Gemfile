@@ -27,7 +27,6 @@ gem 'goldiloader', '~> 3.1.1'
 
 gem 'webpacker'
 gem 'react-rails'
-gem 'bootstrap'
 gem 'rails-fontawesome5'
 
 group :development, :test do
