@@ -1,0 +1,68 @@
+<h1> Curtin Courses Index </h1>
+
+<br />
+<h3> Info </h3>
+This application crawls data from the <a href="http://handbook.curtin.edu.au/">Curtin Course Handbook</a>. 
+Since Curtin doesn't provide an API, we parse the HTML webpages, which are occassionally malformed.
+All information provided by this application is publically available in the Curtin Handbook, just put into a more digestible format. 
+
+<br /> <br />
+<h3> API </h3> 
+<p>The Curtin Courses Index provides an API that you can use to get information about all of Curtin's units and courses.</p>
+
+<p>As always, this application is provided in good faith. Information in the handbook doesn't change very often, so please cache 
+your queries where possible to make this application faster for everyone, especially in the large dataset endpoints.</p>
+
+<%
+endpoints = [
+  {
+    category: "Search",
+    endpoints: [
+      { path: "/api/search", params: "?query=", example: "/api/search?query=Mech", desc: "Search for both courses and units, with up to 6 results of each." },
+      { path: "/api/search/courses", params: "?query=", example: "/api/search/courses?query=Mech", desc: "Search for courses, with up to 10 results." },
+      { path: "/api/search/units", params: "?query=", example: "/api/search/units?query=Mech", desc: "Search for units, with up to 10 results." }
+    ]
+  },
+  {
+    category: "Units",
+    endpoints: [
+      { path: "/api/units", example: "/api/units", desc: "Brief description of all units. This is a large data endpoint." },
+      { path: "/api/units/:code", params: ":code", example: "/api/units/MXEN2000", desc: "Full description of a single unit, including it's prerequisites postfix expression." },
+      { path: "/api/units/:code/courses", params: ":code", example: "/api/units/MXEN2000/courses", desc: "Same as the /api/units/:code endpoint, but includes a listing of all courses this unit belongs to." }
+    ]
+  },
+  {
+    category: "Courses",
+    endpoints: [
+      { path: "/api/courses", example: "/api/courses", desc: "Brief description of all courses. This is a large data endpoint." },
+      { path: "/api/courses/:code", params: ":code", example: "/api/courses/MDDU-MXNCS", desc: "Full description of a course, including its units and their prerequisites." },
+      { path: "/api/courses/:code/streams", params: ":code", example: "/api/courses/MDDU-MXNCS/streams", desc: "Listing of the streams of a course. Note that the stream parent is listed in all other endpoints, but stream children are only listed in this one." }
+    ]
+  }
+]
+%>
+
+<% endpoints.each do |cat| %>
+<h4> <%= cat[:category] %> </h4>
+<table class="table">
+  <thead>
+    <tr>
+      <th scope="col">Path</th>
+      <th scope="col">Params</th>
+      <th scope="col">Example</th>
+      <th scope="col">Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% cat[:endpoints].each do |ep| %>
+      <tr>
+        <th scope="row"><%= ep[:path] %></th>
+        <td><%= ep[:params] %></td>
+        <td><%= ep[:example] %></td>
+        <td><%= ep[:desc] %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+<br />
+<% end %>

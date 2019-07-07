@@ -1,0 +1,24 @@
+<h1> Curtin Courses Index </h1>
+<h3> Legend </h3>
+
+<br />
+<h4> Unit Graph </h4>
+<p> Each collection of units has a unit graph, such as the one below. It also contains some controls </p>
+<p> You can <strong>zoom in on the graph</strong>, drag nodes around, or <strong>double click</strong> a unit to bring up its own page </p>
+<p>
+<span style="color: purple"><strong>Purple</strong></span> nodes are regular units for completion.
+<span style="color: orange"><strong>Orange</strong></span> nodes belong to an optional group of units (see the course handbook for details).<br />
+<span style="color: gray"><strong>Gray</strong></span> nodes are 'external' (not in this course of study). These are by default hidden in course graphs, but can be toggled with the buttons below.<br />
+<span style="color: red"><strong>Red</strong></span> nodes are rare - they represent units that are malformed in the Curtin Course handbook (<a href="<%= unit_path("CHEM3006") %>">CHEM3006</a>, for example).
+</p>
+
+<% course = Course.find_by_code("MDDU-MXNCS") %>
+<h4> Example for <a href="<%= course_path(course.code) %>"><%= course.code %> (<%= course.name %>) </a></h4>
+<%= 
+react_component("UnitGraph",
+  hide_external: true,
+  unit_base_url: unit_path(":code"),
+  height: '30vh',
+  units: serialize(course, units: true, include: '**').serializable_hash[:course][:course_units]
+)
+%>

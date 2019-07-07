@@ -1,0 +1,14 @@
+<h1> <%= @unit.code %> - <%= @unit.name %> </h1>
+<h3> Courses Listing </h3>
+
+<p>
+<i class="fas fa-level-up-alt">&nbsp;</i> <a href="<%= unit_path(@unit.code) %>">Back to Unit</a>
+</p>
+
+<ul class="list-group">
+<% @unit.courses.each do |course| %>
+  <li class="list-group-item">
+    <a href="<%= course_path(course.code) %>"> <%= course.code %> - <%= course.name %> </a>
+  </li>
+<% end %>
+</ul>

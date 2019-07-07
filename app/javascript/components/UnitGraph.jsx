@@ -95,22 +95,35 @@ class UnitGraph extends React.Component {
       })
 
       arr_cache.forEach(node => {
-        let from = edges.filter(x => { return x.from == node.id })
-        let to   = edges.filter(x => { return x.to   == node.id })
+        let outgoing = edges.filter(x => { return x.from == node.id })
+        let incoming = edges.filter(x => { return x.to   == node.id })
 
         if (node.status == 'op') {
-          if (from.length == 0 || to.length == 0) {
+          if (outgoing.length == 0 || incoming.length == 0) {
+            // Hide any no-ops
             node.hidden = true
-          } else if (to.length == 1) {
-            from.forEach(e => {
-              e.to = to[0].to
+          } else if (incoming.length == 1) {
+            // If we're the only target, skip over us and go to the next one
+            outgoing.forEach(e => {
+              e.to = incoming[0].to
             })
             node.hidden = true
+          } else if (node.label == "AND") {
+            // ANDs can be simplfied to go directly to the target
+            node.hidden = true
+            outgoing.forEach(o => {
+              let target = o.to
+              incoming.forEach(i => {
+                let source = i.from
+                edges.push({ from: source, to: target })
+              })
+            })
           } else {
+            // Cannot optimize, push it back
             nodes_arr.push(node)
           }
         } else {
-          if (from.length == 0 && to.length == 0) {
+          if (outgoing.length == 0 && incoming.length == 0) {
             singular_nodes[node.id] = node
             if (showSingular) nodes_arr.push(node)
           } else {
@@ -159,7 +172,7 @@ class UnitGraph extends React.Component {
 
   nodeDoubleClick = (e) => {
     let {nodes, edges} = e
-    if (nodes.length == 1 && nodes[0].status != 'op') {
+    if (nodes.length == 1 && !isNumber(nodes[0])) {
       window.location.href = this.props.unit_base_url.replace(/\:code/, nodes[0])
     }
   }
@@ -219,13 +232,17 @@ class UnitGraph extends React.Component {
                 hierarchicalRepulsion: {
                   nodeDistance: 80,
                   springLength: 50
+                },
+                repulsion: {
+                  springLength: 120,
+                  nodeDistance: 150
                 }
               }
             }}
             events={{
               doubleClick: this.nodeDoubleClick
             }}
-            style={{ width: '80vw', height: '70vh' }}
+            style={{ width: this.props.width || '85vw', height: this.props.height || '70vh' }}
           />
         }
         
