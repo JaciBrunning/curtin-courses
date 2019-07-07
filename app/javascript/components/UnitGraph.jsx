@@ -199,7 +199,10 @@ class UnitGraph extends React.Component {
         </Collapse>
         {
           this.state.graph.nodes.length == 0 ? 
-          <h2> No unit graphs! </h2> :
+          <React.Fragment>
+            <br />
+            <h2> This unit has no dependencies. </h2>
+          </React.Fragment> :
           <Graph
             graph={this.state.graph}
             options={{ 

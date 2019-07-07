@@ -190,12 +190,13 @@ class UpdateSingleCourseJob < ApplicationJob
 
     # Remove all old unit codes and admission requirements - assume they've been met
     stack = []
+    ignorable = lambda { |x| x.is_a?(Hash) && (x[:type] == :admission || (x[:type] == :unit && x[:name] =~ /^\d{4,6}$/)) }
     postfix.each do |token|
       if token.is_a?(Array) || token.is_a?(Hash)
         stack.push token
       else
         operands = [stack.pop, stack.pop]
-        const_operands = operands.map { |x| x.is_a?(Hash) && (x[:type] == :admission || (x[:type] == :unit && x[:name] =~ /^\d{4,6}$/)) }
+        const_operands = operands.map { |x| ignorable.call(x) }
 
         if const_operands[0] 
           stack.push(operands[1])
@@ -207,19 +208,23 @@ class UpdateSingleCourseJob < ApplicationJob
       end
     end
 
-    # Flatten into the final postfix expression
-    postfix = stack.flatten.map do |x| 
-      if x.is_a?(Hash)
-        x[:name]
-      elsif x == "AND"
-        "&"
-      elsif x == "OR"
-        "|"
-      else
-        "?"
+    # If the entire stack can be ignored (e.g. is all old units or admission criteria), there are no prereqs.
+    if stack.all? { |x| ignorable.call(x) }
+      []
+    else
+      # Flatten into the final postfix expression
+      postfix = stack.flatten.map do |x| 
+        if x.is_a?(Hash)
+          x[:name]
+        elsif x == "AND"
+          "&"
+        elsif x == "OR"
+          "|"
+        else
+          "?"
+        end
       end
+      postfix
     end
-
-    postfix
   end
 end
