@@ -130,8 +130,27 @@ class UnitGraph extends React.Component {
                 edges.push({ from: source, to: target })
               })
             })
+          } else if (node.label == "OR") {
+            // Try to optimize cascading ORs
+            // TODO: Optimize this in postfix expression
+            incoming.forEach(edge => {
+              let source = nodes[edge.from]
+              if (source != undefined && source.label == "OR") {
+                let source_incoming = edges.filter(x => { return x.to == source.id })
+                let source_outgoing = edges.filter(x => { return x.from == source.id })
+              
+                if (source_outgoing.length == 1) {
+                  // Cascades - can merge nodes
+                  source.hidden = true
+                  source_incoming.forEach(e => {
+                    e.to = node.id
+                  })
+                }
+              }
+            })
+            nodes_arr.push(node)
           } else {
-            // Cannot optimize, push it back
+            // Unknown, cannot optimize, push it back
             nodes_arr.push(node)
           }
         } else {
