@@ -10,6 +10,7 @@ const colour_or = "#fa70ff"
 const colour_and = "#998efa"
 const colour_optional = "#ff9f29"
 const colour_error = "#fa8e8e"
+const colour_selected = "#00d420"
 
 class UnitGraph extends React.Component {
   constructor(props) {
@@ -42,7 +43,11 @@ class UnitGraph extends React.Component {
       }
 
       nodes[unit.code].status = 'internal'
-      nodes[unit.code].color = u.optional ? colour_optional : unit.error ? colour_error : colour_node
+      let colour = u.optional ? colour_optional : unit.error ? colour_error : colour_node
+      nodes[unit.code].color = {
+        background: colour,
+        border: colour
+      }
 
       if (unit.prereqs != null) {
         unit.prereqs.forEach(dep => {
@@ -52,13 +57,17 @@ class UnitGraph extends React.Component {
             let b = stack.pop()
             let i = op_id++
 
+            colour = (dep == '|' ? colour_or : colour_and)
             nodes[i] = {
               id: i,
               label: (dep == '|' ? "OR" : "AND"),
-              color: (dep == '|' ? colour_or : colour_and),
               status: 'op',
               hidden: false,
               shape: 'box'
+            }
+            nodes[i].color = {
+              background: colour,
+              border: colour
             }
 
             edges.push({ from: a, to: i })
@@ -72,7 +81,10 @@ class UnitGraph extends React.Component {
               label: dep,
               status: 'external',
               hidden: !showHidden,
-              color: colour_outside
+              color: {
+                background: colour_outside,
+                border: colour_outside
+              }
             }
             hiddenNodes[dep] = nodes[dep]
           }
@@ -218,7 +230,25 @@ class UnitGraph extends React.Component {
           </React.Fragment> :
           <Graph
             graph={this.state.graph}
-            options={{ 
+            options={{
+              edges: {
+                smooth: true,
+                color: {
+                  highlight: colour_selected
+                }
+              },
+              nodes: {
+                color: {
+                  highlight: {
+                    border: colour_selected,
+                    background: colour_selected
+                  }
+                }
+              },
+              autoResize: true,
+              interaction: {
+                multiselect: true
+              },
               layout: { 
                 hierarchical: { 
                   enabled: this.state.hierarchical, 
@@ -229,6 +259,11 @@ class UnitGraph extends React.Component {
                 }
               },
               physics: {
+                enabled: true,
+                stabilization: {
+                  enabled: true,
+                  iterations: 1000
+                },
                 hierarchicalRepulsion: {
                   nodeDistance: 80,
                   springLength: 50
@@ -239,6 +274,8 @@ class UnitGraph extends React.Component {
                 }
               }
             }}
+            getNodes={n => this.nodeset = n}
+            getNetwork={n => this.network = n}
             events={{
               doubleClick: this.nodeDoubleClick
             }}
