@@ -87,6 +87,7 @@ class UpdateSingleCourseJob < ApplicationJob
       unit.url = url
       unit.credits = unit_details[:credits]
       unit.prereqs = unit_details[:prereq].to_json
+      unit.error = unit_details[:error]
       unit.save
     end
 
@@ -115,7 +116,10 @@ class UpdateSingleCourseJob < ApplicationJob
         h[:credits] = td.text.to_f if th.text == "Credits:"
 
         if th.text == "Prerequisite(s):"
+          @error = nil
           h[:prereq] = prereqs_to_postfix td.inner_html
+          h[:error] = @error unless @error.nil?
+          @error = nil
         end
       end
     end
@@ -152,9 +156,14 @@ class UpdateSingleCourseJob < ApplicationJob
           elsif level < cur_level
             # Add a closed bracket (backtrack until the last open bracket)
             top = stack.pop
-            while top != '('
+            while top != '(' && !top.nil?
               postfix << top
               top = stack.pop
+            end
+
+            if top.nil?
+              # Mark as error
+              @error = :graph
             end
           end
           cur_level = level
@@ -186,7 +195,6 @@ class UpdateSingleCourseJob < ApplicationJob
         stack.push token
       else
         operands = [stack.pop, stack.pop]
-        puts operands.inspect
         const_operands = operands.map { |x| x.is_a?(Hash) && (x[:type] == :admission || (x[:type] == :unit && x[:name] =~ /^\d{4,6}$/)) }
 
         if const_operands[0] 

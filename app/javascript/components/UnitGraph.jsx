@@ -4,30 +4,28 @@ import truncate from 'truncate';
 import { Collapse } from 'react-collapse';
 import { isNumber } from 'util';
 
-
-const graph = {
-  nodes: [
-    { id: 'a', label: "Node 1" },
-    { id: 2, label: "Node 2" },
-    { id: 3, label: "Node 3" },
-    { id: 4, label: "Node 4" },
-    { id: 5, label: "Node 5" }
-  ],
-  edges: [{ from: 'a', to: 2 }, { from: 'a', to: 3 }, { from: 2, to: 4 }, { from: 2, to: 5 }]
-}
-
 const colour_outside = "#949494"
 const colour_node = "#e18efa"
-const colour_or = "#fa8e8e"
+const colour_or = "#fa70ff"
 const colour_and = "#998efa"
+const colour_optional = "#ff9f29"
+const colour_error = "#fa8e8e"
 
 class UnitGraph extends React.Component {
   constructor(props) {
     super(props)
+    this.state = {
+      lists: null,
+      hierarchical: true
+    }
+    Object.assign(this.state, this.generateGraph(!this.props.hide_external, false))
+  }
 
+  generateGraph = (showHidden, showSingular) => {
     // Process units graph
     let nodes = {}
     let edges = []
+    let hiddenNodes = {}
 
     let op_id = 0
     let stack = []
@@ -44,7 +42,7 @@ class UnitGraph extends React.Component {
       }
 
       nodes[unit.code].status = 'internal'
-      nodes[unit.code].color = colour_node
+      nodes[unit.code].color = u.optional ? colour_optional : unit.error ? colour_error : colour_node
 
       if (unit.prereqs != null) {
         unit.prereqs.forEach(dep => {
@@ -73,9 +71,10 @@ class UnitGraph extends React.Component {
               id: dep,
               label: dep,
               status: 'external',
-              hidden: this.props.hide_external,
+              hidden: !showHidden,
               color: colour_outside
             }
+            hiddenNodes[dep] = nodes[dep]
           }
         });
       }
@@ -84,7 +83,7 @@ class UnitGraph extends React.Component {
         edges.push({ from: stack.pop(), to: unit.code })
     });
 
-    let singular_nodes = []
+    let singular_nodes = {}
     let nodes_arr = Object.values(nodes).filter(n => { return !n.hidden })
     for (let i = 0; i < 5; i++) {
       let arr_cache = nodes_arr
@@ -112,7 +111,8 @@ class UnitGraph extends React.Component {
           }
         } else {
           if (from.length == 0 && to.length == 0) {
-            singular_nodes.push(node)
+            singular_nodes[node.id] = node
+            if (showSingular) nodes_arr.push(node)
           } else {
             nodes_arr.push(node)
           }
@@ -120,14 +120,15 @@ class UnitGraph extends React.Component {
       })
     }
 
-    this.state = {
+    return {
       graph: { 
         nodes: nodes_arr,
         edges: edges
       },
-      hidden: Object.values(nodes).filter(n => { return n.hidden && !isNumber(n.id) }),
-      singular: singular_nodes,
-      lists: null
+      hidden: Object.values(hiddenNodes),
+      showHidden: showHidden,
+      showSingular: showSingular,
+      singular: Object.values(singular_nodes)
     }
   }
 
@@ -141,6 +142,21 @@ class UnitGraph extends React.Component {
     this.setState({ lists: (this.state.lists == "hidden" ? null : "hidden") })
   }
 
+  toggleHiddenGraph = (e) => {
+    e.preventDefault()
+    this.setState(this.generateGraph(!this.state.showHidden, this.state.showSingular))
+  }
+
+  toggleHierarchical = (e) => {
+    e.preventDefault()
+    this.setState({ hierarchical: !this.state.hierarchical })
+  }
+
+  showStandalone = () => { return this.state.lists == "standalone" }
+  showHidden = () => { return this.state.lists == "hidden" }
+  showHiddenGraph = () => { return this.state.showHidden }
+  isHierarchical = () => { return this.state.hierarchical }
+
   nodeDoubleClick = (e) => {
     let {nodes, edges} = e
     if (nodes.length == 1 && nodes[0].status != 'op') {
@@ -151,10 +167,18 @@ class UnitGraph extends React.Component {
   render() {
     return (
       <React.Fragment>
-        <p>
-          <button className="btn btn-primary" onClick={this.toggleStandalone}> Standalone Units </button> &nbsp;
-          <button className="btn btn-primary" onClick={this.toggleHidden}> Hidden (external) Units </button>
-        </p>
+        <div>
+          {
+            this.state.singular.length > 0 ? <button className={ "btn mx-1 " + (this.showStandalone() ? "btn-danger" : "btn-primary") } onClick={this.toggleStandalone}> { this.showStandalone() ? "Hide" : "Show" } Standalone Units </button> : <React.Fragment />
+          }
+          {
+            this.state.hidden.length > 0 ? <button className={ "btn mx-1 " + (this.showHidden() ? "btn-danger" : "btn-primary") } onClick={this.toggleHidden}> { this.showHidden() ? "Hide" : "Show" } External Units </button> : <React.Fragment />
+          }
+          {
+            this.props.hide_external ? <button className={ "btn mx-1 " + (this.showHiddenGraph() ? "btn-dark" : "btn-secondary") } onClick={this.toggleHiddenGraph}> { this.showHiddenGraph() ? "Hide" : "Show" } External in Graph</button> : <React.Fragment />
+          }
+          <button className="btn btn-secondary mx-1" onClick={this.toggleHierarchical}> { this.isHierarchical() ? "Blob" : "Hierarchical" } </button>
+        </div>
         <Collapse isOpened={this.state.lists == "standalone"}>
           <ul className="list-group">
             {
@@ -181,9 +205,9 @@ class UnitGraph extends React.Component {
             options={{ 
               layout: { 
                 hierarchical: { 
-                  enabled: true, 
+                  enabled: this.state.hierarchical, 
                   direction: 'LR',
-                  treeSpacing: 0,
+                  treeSpacing: 20,
                   nodeSpacing: 80,
                   levelSeparation: 200,
                 }

@@ -4,6 +4,7 @@ class UnitSerializer < ActiveModel::Serializer
   attribute :prereqs, unless: :brief? do
     JSON.parse object.prereqs
   end
+  attribute :error, if: :has_error?
 
   has_many :courses, if: :show_courses?
 
@@ -13,5 +14,9 @@ class UnitSerializer < ActiveModel::Serializer
 
   def brief?
     @instance_options[:brief]
+  end
+
+  def has_error?
+    !object.error.nil?
   end
 end
