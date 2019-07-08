@@ -25,6 +25,6 @@ production:
   adapter: postgresql
   encoding: unicode
   host: db
-  database: YOUR_PROJECT_DB
+  database: curtin_courses
   username: <%= ENV['POSTGRES_USER'] %>
   password: <%= ENV['POSTGRES_PASSWORD'] %>
