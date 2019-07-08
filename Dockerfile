@@ -6,10 +6,10 @@ RUN (curl -sL https://deb.nodesource.com/setup_11.x | bash -) && apt-get update 
 RUN gem install bundler
 
 RUN mkdir /app
+COPY . /app
 WORKDIR /app
 
 RUN bundle install
-COPY . /app
 
 RUN rake assets:precompile RAILS_ENV=production SECRET_KEY_BASE=`rake secret` RAILS_MASTER_KEY=`rake secret`
 
