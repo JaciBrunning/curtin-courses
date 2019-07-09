@@ -218,10 +218,10 @@ class GraphGenerator {
       } else {
         // Unit type
         // Optimization: island
-        if (incoming.length == 0 && outgoing.length == 0) {
-          this.islandNodes[node.id] = node
-          optimized = true
-        }
+        // if (incoming.length == 0 && outgoing.length == 0) {
+        //   this.islandNodes[node.id] = node
+        //   optimized = true
+        // }
       }
 
       if (!optimized) this.nodes[node.id] = node
