@@ -13,20 +13,25 @@ const colour_optional = "#ff9f29"
 const colour_error = "#fa8e8e"
 const colour_selected = "#00d420"
 
+const hierarchical_full = "Pure Hierarchical"
+const hierarchical_noauto = "Hybrid Hierarchical"
+const hierarchical_none = "Blob"
+
 class UnitGraph extends React.Component {
   constructor(props) {
     super(props)
     this.generator = new GraphGenerator(this.props.units)
     this.state = {
       lists: null,
-      hierarchical: true
+      graphKey: 0   // When changing layouts, sometimes we need to reinit the graph
     }
-    Object.assign(this.state, this.generateGraph(!this.props.hide_external, false))
+    Object.assign(this.state, this.generateGraph(!this.props.hide_external, hierarchical_full))
   }
 
-  generateGraph = (showHidden) => {
+  generateGraph = (showHidden, hierarchical) => {
     this.generator.reset()
-    let result = this.generator.generateGraph(showHidden)
+    let result = this.generator.generateGraph(showHidden, hierarchical == hierarchical_full)
+
     return {
       graph: {
         nodes: Object.values(result.nodes),
@@ -34,7 +39,9 @@ class UnitGraph extends React.Component {
       },
       showHidden: showHidden,
       hidden: Object.values(result.hidden),
-      singular: Object.values(result.island)
+      singular: Object.values(result.island),
+      hierarchical: hierarchical,
+      graphKey: this.state.graphKey + 1
     }
   }
 
@@ -50,18 +57,22 @@ class UnitGraph extends React.Component {
 
   toggleHiddenGraph = (e) => {
     e.preventDefault()
-    this.setState(this.generateGraph(!this.state.showHidden, this.state.showSingular))
+    this.setState(this.generateGraph(!this.state.showHidden, this.state.hierarchical))
+  }
+
+  nextHierarchicalOption = () => {
+    return this.state.hierarchical == hierarchical_full ? hierarchical_noauto : this.state.hierarchical == hierarchical_noauto ? hierarchical_none : hierarchical_full
   }
 
   toggleHierarchical = (e) => {
     e.preventDefault()
-    this.setState({ hierarchical: !this.state.hierarchical })
+    let next = this.nextHierarchicalOption()
+    this.setState(this.generateGraph(this.state.showHidden, next))
   }
 
   showStandalone = () => { return this.state.lists == "standalone" }
   showHidden = () => { return this.state.lists == "hidden" }
   showHiddenGraph = () => { return this.state.showHidden }
-  isHierarchical = () => { return this.state.hierarchical }
 
   nodeDoubleClick = (e) => {
     let {nodes, edges} = e
@@ -83,7 +94,7 @@ class UnitGraph extends React.Component {
           {
             this.props.hide_external ? <button className={ "btn mx-1 " + (this.showHiddenGraph() ? "btn-dark" : "btn-secondary") } onClick={this.toggleHiddenGraph}> { this.showHiddenGraph() ? "Hide" : "Show" } External in Graph</button> : <React.Fragment />
           }
-          <button className="btn btn-secondary mx-1" onClick={this.toggleHierarchical}> { this.isHierarchical() ? "Blob" : "Hierarchical" } </button>
+          <button className="btn btn-secondary mx-1" onClick={this.toggleHierarchical}> { this.nextHierarchicalOption() } </button>
         </div>
         <Collapse isOpened={this.state.lists == "standalone"}>
           <ul className="list-group">
@@ -110,6 +121,7 @@ class UnitGraph extends React.Component {
             <h2> This unit has no dependencies. </h2>
           </React.Fragment> :
           <Graph
+            key={this.state.graphKey}
             graph={this.state.graph}
             options={{
               edges: {
@@ -132,7 +144,7 @@ class UnitGraph extends React.Component {
               },
               layout: { 
                 hierarchical: { 
-                  enabled: this.state.hierarchical, 
+                  enabled: this.state.hierarchical != hierarchical_none, 
                   direction: 'LR',
                   treeSpacing: 20,
                   nodeSpacing: 80,

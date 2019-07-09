@@ -4,7 +4,8 @@ require 'nokogiri'
 class UpdateSingleCourseJob < ApplicationJob
   queue_as :default
 
-  OPTIONAL_REGEX = /Optional.Units.to.Select.from.in.(.+)/
+  OPTIONAL_REGEX = /(Optional.+)/
+  PLANNED_REGEX = /(Year.+)/
   UNIT_TITLE_REGEX = /([A-Z0-9-]{6,10}).\([a-zA-Z\.0-9]+\).(.+)/
   UNIT_MODIFICATION_BOUND = 1.day
 
@@ -32,7 +33,7 @@ class UpdateSingleCourseJob < ApplicationJob
       else
         # Is a unit - do the work in (avoid loading more jobs)
         @current = org_url
-        update_unit org_url, course, entry[:optional]
+        update_unit org_url, course, entry
         # UpdateSingleUnitJob.perform_now org_url, course.id, entry[:optional]
       end
     end
@@ -45,7 +46,9 @@ class UpdateSingleCourseJob < ApplicationJob
 
   def parse_organisation url, doc
     title = nil
-    opt = nil
+    opt = false
+    planned = nil
+    planned_lvl = 0
     entries = []
 
     doc.css("div#content table.fullwidth tr").each do |tr|
@@ -55,13 +58,18 @@ class UpdateSingleCourseJob < ApplicationJob
         # Parse title - could be describing a set of optionals
         title = them.text.strip
         if title =~ OPTIONAL_REGEX
-          opt = $1
+          planned_lvl += 1
+          planned = $1
+          opt = true
+        elsif title =~ PLANNED_REGEX
+          planned_lvl += 1
+          planned = $1
         else
-          opt = nil
+          opt = false
         end
       elsif tda.count == 1
         # Parse href, it's a link to a unit or stream
-        entries << { title: title, optional: opt, url: URI::join(url, tda.first['href']).to_s }
+        entries << { title: title, optional: opt, planned: planned, planned_lvl: planned_lvl, url: URI::join(url, tda.first['href']).to_s }
       end
     end
     entries
@@ -69,7 +77,7 @@ class UpdateSingleCourseJob < ApplicationJob
 
   # -- UNITS --
 
-  def update_unit url, course, opt
+  def update_unit url, course, org
     unit = Unit.find_by(url: url)
     # Update the unit if sufficiently old
     if (unit.nil? || (Date.today - unit.updated_at.to_date) < UNIT_MODIFICATION_BOUND)
@@ -94,7 +102,9 @@ class UpdateSingleCourseJob < ApplicationJob
     # Bind the unit to a course
 
     bind = CourseUnit.find_or_initialize_by(course: course, unit: unit)
-    bind.optional = opt
+    bind.optional = org[:optional]
+    bind.planned_period = org[:planned]
+    bind.planned_level = org[:planned_lvl]
     bind.save
   end
 

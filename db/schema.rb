@@ -10,14 +10,16 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2019_07_07_105540) do
+ActiveRecord::Schema.define(version: 2019_07_09_151733) do
 
   create_table "course_units", force: :cascade do |t|
     t.integer "course_id"
     t.integer "unit_id"
-    t.string "optional"
+    t.boolean "optional"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "planned_period"
+    t.integer "planned_level", default: 0
     t.index ["course_id", "unit_id"], name: "index_course_units_on_course_id_and_unit_id", unique: true
     t.index ["course_id"], name: "index_course_units_on_course_id"
     t.index ["unit_id"], name: "index_course_units_on_unit_id"

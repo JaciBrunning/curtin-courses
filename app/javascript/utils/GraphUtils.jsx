@@ -21,7 +21,7 @@ class GraphGenerator {
     this.edges = []
   }
 
-  generateGraph = (showHidden, optimizeIterations=5) => {
+  generateGraph = (showHidden, levelledHeirarchy, optimizeIterations=5) => {
     let opid = 0
     let stack = []
 
@@ -31,6 +31,13 @@ class GraphGenerator {
       console.log("Optimize " + i)
       this._clearUnusedEdges()
       this._optimize()
+    }
+    if (levelledHeirarchy == true) {
+      this._postfillLevels()
+      this._maybeStripLevels()
+    } else {
+      console.log("Stripping levels...")
+      this._doStripLevels()
     }
 
     return {
@@ -56,6 +63,9 @@ class GraphGenerator {
         border: colour
       }
     }
+
+    if (u.planned_level)
+      this.nodes[unit.code].level = u.planned_level * 1.5
   }
 
   _assignAggregation = (id, agg) => {
@@ -73,7 +83,7 @@ class GraphGenerator {
     }
   }
 
-  _assignExternal = (unit_id, hide) => {
+  _assignExternal = (parent, unit_id, hide) => {
     if (!(unit_id in this.nodes)) {
       if (this.units.filter(u => (u.unit.code == unit_id)).length != 0)
         console.error("EXTERNAL: " + unit_id)
@@ -88,6 +98,9 @@ class GraphGenerator {
           border: colour_external
         }
       }
+
+      if (parent.planned_level)
+        target[unit_id].level = parent.planned_level * 1.5 - 0.75
     }
   }
 
@@ -115,7 +128,7 @@ class GraphGenerator {
         } else {
           // Is a unit node, give it a "external" (hidden) node if
           // it doesn't already have one, and add it to the stack
-          this._assignExternal(dep, !showHidden)
+          this._assignExternal(u, dep, !showHidden)
           stack.push(dep)
         }
       })
@@ -215,11 +228,53 @@ class GraphGenerator {
     })
   }
 
-  // TODO: Don't need?
-  filterObj(obj, pred) {
-    return Object.keys(obj)
-          .filter( key => pred(obj[key]) )
-          .reduce( (res, key) => (res[key] = obj[key], res), {} )
+  _postfillLevelsForNode = (node) => {
+    node._visited = true
+    if (node.level == undefined) {
+      let levels = []
+      let incoming = this.edges.filter(e => e.to == node.id)
+      let outgoing = this.edges.filter(e => e.from == node.id)
+
+      // TODO: Prevent circular
+      incoming.forEach(i => {
+        let source = this.nodes[i.from]
+        if (source.level != undefined)
+          levels.push(source.level)
+        else if (!source._visited)
+          this._postfillLevelsForNode(source)
+      })
+
+      outgoing.forEach(o => {
+        let target = this.nodes[o.to]
+        if (target.level != undefined)
+          levels.push(target.level)
+        else if (!target._visited)
+          this._postfillLevelsForNode(target)
+      })
+
+      let n = levels.length
+      node.level = n == 0 ? undefined : levels.reduce((a, b) => a + b) / n
+    }
+  }
+
+  _postfillLevels = () => {
+    Object.values(this.nodes).forEach(n => {
+      n._visited = false
+      if (n.level == undefined)
+        this._postfillLevelsForNode(n)
+    })
+  }
+
+  _maybeStripLevels = () => {
+    let unlevelled = Object.values(this.nodes).filter(n => n.level == undefined)
+    if (unlevelled.length > 0) {
+      console.error("STRIPPING LEVELS DUE TO ", unlevelled)
+      this._doStripLevels()
+    }
+  }
+
+  _doStripLevels = () => {
+    Object.values(this.nodes).forEach(n => delete n.level)
   }
   
 }
