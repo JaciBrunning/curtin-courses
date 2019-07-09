@@ -1,5 +1,5 @@
 import truncate from "truncate";
-import { md5 } from "md5";
+import md5 from "md5";
 
 const colour_external = "#949494"
 const colour_node = "#e18efa"
@@ -28,7 +28,8 @@ class GraphGenerator {
     this.units.forEach(this._assignInternal)
     this.units.forEach(u => this._processPrereqs(u, showHidden))
     for (let i = 0; i < optimizeIterations; i++) {
-      this._clearHiddenEdges()
+      console.log("Optimize " + i)
+      this._clearUnusedEdges()
       this._optimize()
     }
 
@@ -74,6 +75,8 @@ class GraphGenerator {
 
   _assignExternal = (unit_id, hide) => {
     if (!(unit_id in this.nodes)) {
+      if (this.units.filter(u => (u.unit.code == unit_id)).length != 0)
+        console.error("EXTERNAL: " + unit_id)
       let target = hide ? this.hiddenNodes : this.nodes
       target[unit_id] = {
         id: unit_id,
@@ -88,6 +91,9 @@ class GraphGenerator {
     }
   }
 
+  _hashKey = (obj) => md5(JSON.stringify(obj)).substr(0, 6)
+  _aggKey = (sym, a, b) => sym + "-" + this._hashKey(a) + "-" + this._hashKey(b)
+
   _processPrereqs = (u, showHidden) => {
     let stack = []
     let unit = u.unit
@@ -96,11 +102,12 @@ class GraphGenerator {
         if (dep == '|' || dep == '&') {
           // Is an operation node, pop the stack for the operands
           // and add the new graph node
+          let sym = dep == '|' ? "OR" : "AND"
           let a = stack.pop()
           let b = stack.pop()
-          let id = md5(JSON.stringify(a)).substr(0, 6) + md5(JSON.stringify(b)).substr(0, 6)
+          let id = this._aggKey(sym, a, b)
 
-          this._assignAggregation(id, dep == '|' ? "OR" : "AND")
+          this._assignAggregation(id, sym)
 
           this.edges.push({ from: a, to: id })
           this.edges.push({ from: b, to: id })
@@ -119,12 +126,18 @@ class GraphGenerator {
     }
   }
 
-  _clearHiddenEdges = () => {
+  _clearUnusedEdges = () => {
+    let keys = {}
     this.edges = this.edges.filter(x => {
-      return (x.from in this.nodes) 
+      let hc = this._hashKey(x.from) + this._hashKey(x.to)
+      let accept = (x.from in this.nodes) 
               && !this.nodes[x.from].hidden 
               && (x.to in this.nodes)
               && !this.nodes[x.to].hidden
+              && !(hc in keys)
+      if (accept)
+        keys[hc] = true
+      return accept
     })
   }
 
@@ -134,17 +147,21 @@ class GraphGenerator {
     let nodeSet = this.nodes
     this.nodes = {}
 
-    nodeSet.forEach((key, node) => {
+    Object.keys(nodeSet).forEach((key) => {
+      let node = nodeSet[key]
       let outgoing = this.edges.filter(x => (x.from == node.id))
       let incoming = this.edges.filter(x => (x.to   == node.id))
+      let optimized = false
 
       if (node.type == 'aggregate') {
         // Aggregation type
         if (incoming.length == 0 || outgoing.length == 0) {
-          // No-op aggregation - no action needed
+          // No-op aggregation - optimize out
+          optimized = true
         } else if (incoming.length == 1) {
           // We only have one operand - skip over this node
-          outgoing.forEach(e => (e.to = incoming[0].to))
+          outgoing.forEach(e => (e.from = incoming[0].from))
+          optimized = true
         } else if (node.label == "AND") {
           // ANDs can be simplified to go directly to target,
           // as long as the target is not OR
@@ -158,21 +175,18 @@ class GraphGenerator {
                 this.edges.push({ from: source, to: target })
               })
             })
-          } else {
-            // Chicken out - we need the AND anyway, no point in optimizing
-            this.nodes[node.id] = node
+            optimized = true
           }
         } else if (node.label == "OR") {
           // Cascading ORs can be optimized
-          // TODO: Optimize this in postfix expression server-side
           incoming.forEach(i => {
             let source = nodeSet[i.from]
             if (source != undefined && source.label == "OR") {
               // Coming from an OR - check if we're its only target
-              let source_outgoing = edges.filter(x => x.from == source.id)
+              let source_outgoing = this.edges.filter(x => x.from == source.id)
               if (source_outgoing.length == 1) {
                 // If we're the only target, remap its edges and don't use the node
-                let source_incoming = edges.filter(x => x.to == source.id)
+                let source_incoming = this.edges.filter(x => x.to == source.id)
                 source_incoming.forEach(e => (e.to = node.id))
               } else {
                 // OR has multiple targets, put it back into the node set
@@ -180,21 +194,24 @@ class GraphGenerator {
               }
             } else if (source != undefined) {
               // Is not an OR, put it back into the node set
+              // TODO: this an error?
               this.nodes[source.id] = source
             }
           })
         } else {
           // We don't know what this is - keep the node and don't optimize
-          this.nodes[node.id] = node
+          console.error("UNKNOWN NODE", node)
         }
       } else {
         // Unit type
         // Optimization: island
-        if (incoming.length == 0 && outgoing.length == 0)
+        if (incoming.length == 0 && outgoing.length == 0) {
           this.islandNodes[node.id] = node
-        else
-          this.nodes[node.id] = node
+          optimized = true
+        }
       }
+
+      if (!optimized) this.nodes[node.id] = node
     })
   }
 
