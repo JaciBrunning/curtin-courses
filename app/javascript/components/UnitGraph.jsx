@@ -3,6 +3,7 @@ import Graph from 'react-graph-vis';
 import truncate from 'truncate';
 import { Collapse } from 'react-collapse';
 import { isNumber } from 'util';
+import GraphGenerator from '../utils/GraphUtils';
 
 const colour_outside = "#949494"
 const colour_node = "#e18efa"
@@ -15,6 +16,7 @@ const colour_selected = "#00d420"
 class UnitGraph extends React.Component {
   constructor(props) {
     super(props)
+    this.generator = new GraphGenerator(this.props.units)
     this.state = {
       lists: null,
       hierarchical: true
@@ -22,7 +24,21 @@ class UnitGraph extends React.Component {
     Object.assign(this.state, this.generateGraph(!this.props.hide_external, false))
   }
 
-  generateGraph = (showHidden, showSingular) => {
+  generateGraph = (showHidden) => {
+    this.generator.reset()
+    let result = this.generator.generateGraph(showHidden)
+    return {
+      graph: {
+        nodes: Object.values(result.nodes),
+        edges: result.edges
+      },
+      showHidden: showHidden,
+      hidden: Object.values(result.hidden),
+      singular: Object.values(result.island)
+    }
+  }
+
+  generateGraphOld = (showHidden, showSingular) => {
     // Process units graph
     let nodes = {}
     let edges = []
