@@ -120,60 +120,62 @@ class UnitGraph extends React.Component {
             <br />
             <h2> This unit has no dependencies. </h2>
           </React.Fragment> :
-          <Graph
-            key={this.state.graphKey}
-            graph={this.state.graph}
-            options={{
-              edges: {
-                smooth: true,
-                color: {
-                  highlight: colour_selected
-                }
-              },
-              nodes: {
-                color: {
-                  highlight: {
-                    border: colour_selected,
-                    background: colour_selected
+          <div style={{ left: '50%', right: '50%', marginLeft: '-50vw', marginRight: '-50vw', maxWith: '100vw', position: 'relative', right: '50%' }}>
+            <Graph
+              key={this.state.graphKey}
+              graph={this.state.graph}
+              options={{
+                edges: {
+                  smooth: true,
+                  color: {
+                    highlight: colour_selected
+                  }
+                },
+                nodes: {
+                  color: {
+                    highlight: {
+                      border: colour_selected,
+                      background: colour_selected
+                    }
+                  }
+                },
+                autoResize: true,
+                interaction: {
+                  multiselect: true
+                },
+                layout: { 
+                  hierarchical: { 
+                    enabled: this.state.hierarchical != hierarchical_none, 
+                    direction: 'LR',
+                    treeSpacing: 20,
+                    nodeSpacing: 80,
+                    levelSeparation: 200,
+                  }
+                },
+                physics: {
+                  enabled: true,
+                  stabilization: {
+                    enabled: true,
+                    iterations: 1000
+                  },
+                  hierarchicalRepulsion: {
+                    nodeDistance: 80,
+                    springLength: 50
+                  },
+                  repulsion: {
+                    springLength: 120,
+                    nodeDistance: 150
                   }
                 }
-              },
-              autoResize: true,
-              interaction: {
-                multiselect: true
-              },
-              layout: { 
-                hierarchical: { 
-                  enabled: this.state.hierarchical != hierarchical_none, 
-                  direction: 'LR',
-                  treeSpacing: 20,
-                  nodeSpacing: 80,
-                  levelSeparation: 200,
-                }
-              },
-              physics: {
-                enabled: true,
-                stabilization: {
-                  enabled: true,
-                  iterations: 1000
-                },
-                hierarchicalRepulsion: {
-                  nodeDistance: 80,
-                  springLength: 50
-                },
-                repulsion: {
-                  springLength: 120,
-                  nodeDistance: 150
-                }
-              }
-            }}
-            getNodes={n => this.nodeset = n}
-            getNetwork={n => this.network = n}
-            events={{
-              doubleClick: this.nodeDoubleClick
-            }}
-            style={{ width: this.props.width || '85vw', height: this.props.height || '70vh' }}
-          />
+              }}
+              getNodes={n => this.nodeset = n}
+              getNetwork={n => this.network = n}
+              events={{
+                doubleClick: this.nodeDoubleClick
+              }}
+              style={{ width: this.props.width || '100vw', height: this.props.height || '70vh' }}
+            />
+          </div>
         }
         
       </React.Fragment>
