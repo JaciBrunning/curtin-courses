@@ -23,6 +23,7 @@ class UnitGraph extends React.Component {
     this.generator = new GraphGenerator(this.props.units)
     this.state = {
       lists: null,
+      filter: null,
       graphKey: 0   // When changing layouts, sometimes we need to reinit the graph
     }
     Object.assign(this.state, this.generateGraph(!this.props.hide_external, hierarchical_full))
@@ -30,6 +31,9 @@ class UnitGraph extends React.Component {
 
   generateGraph = (showHidden, hierarchical) => {
     this.generator.reset()
+    if (this.state.filter)
+      this.generator.setIgnored(this.state.filter.split(/[ ,]+/).filter(Boolean))
+    
     let result = this.generator.generateGraph(showHidden, hierarchical == hierarchical_full)
 
     return {
@@ -43,6 +47,11 @@ class UnitGraph extends React.Component {
       hierarchical: hierarchical,
       graphKey: this.state.graphKey + 1
     }
+  }
+
+  filterUpdate = (e) => {
+    e.preventDefault()
+    this.setState(this.generateGraph(this.state.showHidden, this.state.hierarchical))
   }
 
   toggleStandalone = (e) => {
@@ -114,6 +123,13 @@ class UnitGraph extends React.Component {
             }
           </ul>
         </Collapse>
+
+{/* TODO: Typeahead this */}
+        <form className="row m-1">
+          <input type="text" className="form-control col-sm-10 mr-1" onChange={ e => this.setState({ filter: e.target.value }) } onKeyDown={ e => { if (e.key === 'Enter') this.filterUpdate(e) } } placeholder="Ignored unit codes (separated by spaces or commas)"></input>
+          <button type="submit" className="btn btn-primary col-sm-1 ml-1" onClick={this.filterUpdate}> Filter </button>
+        </form>
+
         {
           this.state.graph.nodes.length == 0 ? 
           <React.Fragment>
@@ -177,7 +193,6 @@ class UnitGraph extends React.Component {
             />
           </div>
         }
-        
       </React.Fragment>
     )
   }

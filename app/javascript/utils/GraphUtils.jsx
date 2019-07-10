@@ -18,7 +18,13 @@ class GraphGenerator {
     this.nodes = {}
     this.hiddenNodes = {} // Nodes that are hidden
     this.islandNodes = {} // Nodes that are alone - no dependencies or dependants
+    this.ignored = []
     this.edges = []
+  }
+
+  setIgnored = (arr) => {
+    this.ignored = arr.map(x => x.trim())
+    console.log("IGNORED: ", this.ignored)
   }
 
   generateGraph = (showHidden, levelledHeirarchy, optimizeIterations=5) => {
@@ -50,6 +56,8 @@ class GraphGenerator {
 
   _assignInternal = (u) => {
     let unit = u.unit
+    if (this.ignored.includes(unit.code)) return;
+
     let colour = u.optional ? colour_optional : unit.error ? colour_error : colour_node
     this.nodes[unit.code] = {
       id: unit.code,
@@ -84,6 +92,8 @@ class GraphGenerator {
   }
 
   _assignExternal = (parent, unit_id, hide) => {
+    if (this.ignored.includes(unit_id)) return;
+
     if (!(unit_id in this.nodes)) {
       if (this.units.filter(u => (u.unit.code == unit_id)).length != 0)
         console.error("EXTERNAL: " + unit_id)
