@@ -5,7 +5,6 @@ import { isNumber } from 'util';
 import { AsyncTypeahead } from 'react-bootstrap-typeahead';
 import GraphGenerator from '../utils/GraphUtils';
 import SearchUtils from '../utils/SearchUtils';
-import 'react-bootstrap-typeahead/css/Typeahead.css';
 
 const colour_outside = "#949494"
 const colour_node = "#e18efa"

@@ -19,7 +19,7 @@ class SearchUtils {
   }
   static renderTypeaheadToken = (option, props, index) => {
     return <Token key={index} onRemove={props.onRemove}>
-      { option.code }
+      { option.abbrev ? `${option.code} ${option.abbrev}` : option.code }
     </Token>
   }
 }

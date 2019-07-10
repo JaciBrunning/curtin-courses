@@ -6,8 +6,14 @@ RUN (curl -sL https://deb.nodesource.com/setup_11.x | bash -) && apt-get update 
 RUN gem install bundler
 
 RUN mkdir /app
-COPY . /app
 WORKDIR /app
+
+COPY ./Gemfile /app/Gemfile
+COPY ./Gemfile.lock /app/Gemfile.lock
+
+RUN bundle install
+
+COPY . /app
 
 RUN bundle install
 
