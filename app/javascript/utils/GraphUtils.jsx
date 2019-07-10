@@ -61,7 +61,6 @@ class GraphGenerator {
     let colour = u.optional ? colour_optional : unit.error ? colour_error : colour_node
     this.nodes[unit.code] = {
       id: unit.code,
-      label: truncate(`${unit.code}\n${unit.name}`, 25),
       name: unit.name,
       url: unit.url,
       hidden: false,
@@ -71,6 +70,11 @@ class GraphGenerator {
         border: colour
       }
     }
+
+    if (unit.abbrev)
+      this.nodes[unit.code].label = truncate(`${unit.code} (${unit.abbrev})\n${unit.name}`, 25 + 3 + unit.abbrev.length)
+    else
+      this.nodes[unit.code].label = truncate(`${unit.code}\n${unit.name}`, 25)
 
     if (u.planned_level)
       this.nodes[unit.code].level = u.planned_level * 1.5

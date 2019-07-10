@@ -92,6 +92,7 @@ class UpdateSingleCourseJob < ApplicationJob
       unit ||= Unit.new
       unit.code = title[:code]
       unit.name = title[:name]
+      unit.abbrev = (title[:name].split(/\s+/).map { |x| x[0] }.reject { |x| x == x.downcase }).join
       unit.url = url
       unit.credits = unit_details[:credits]
       unit.prereqs = unit_details[:prereq].to_json

@@ -1,6 +1,7 @@
 class UnitSerializer < ActiveModel::Serializer
   type :unit
   attributes :code, :name, :url, :credits
+  attribute :abbrev, if: -> { object.abbrev }
   attribute :prereqs, unless: :brief? do
     JSON.parse object.prereqs
   end

@@ -14,7 +14,9 @@ class SearchUtils {
   static searchCourses = (query, cb) => this.search('courses', query, cb)
   static searchUnits = (query, cb) => this.search('units', query, cb)
 
-  static labelKey = (option) => `${option.code} - ${option.name}`
+  static labelKey = (option) => {
+    return option.abbrev ? `${option.code} - ${option.abbrev} ${option.name}` : `${option.code} - ${option.name}`
+  }
   static renderTypeaheadToken = (option, props, index) => {
     return <Token key={index} onRemove={props.onRemove}>
       { option.code }
