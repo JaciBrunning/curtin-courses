@@ -10,6 +10,7 @@
     "md5": "^2.2.1",
     "popper.js": "^1.15.0",
     "prop-types": "^15.7.2",
+    "rails-erb-loader": "^5.5.2",
     "react": "^16.8.6",
     "react-bootstrap-typeahead": "^3.4.5",
     "react-collapse": "^4.0.3",

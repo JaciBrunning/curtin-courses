@@ -1,9 +1,11 @@
 import React from 'react';
 import Graph from 'react-graph-vis';
-import truncate from 'truncate';
 import { Collapse } from 'react-collapse';
 import { isNumber } from 'util';
+import { AsyncTypeahead } from 'react-bootstrap-typeahead';
 import GraphGenerator from '../utils/GraphUtils';
+import SearchUtils from '../utils/SearchUtils';
+import 'react-bootstrap-typeahead/css/Typeahead.css';
 
 const colour_outside = "#949494"
 const colour_node = "#e18efa"
@@ -23,7 +25,11 @@ class UnitGraph extends React.Component {
     this.generator = new GraphGenerator(this.props.units)
     this.state = {
       lists: null,
-      filter: null,
+      filter: {
+        loading: false,
+        options: [],
+        selected: []
+      },
       graphKey: 0   // When changing layouts, sometimes we need to reinit the graph
     }
     Object.assign(this.state, this.generateGraph(!this.props.hide_external, hierarchical_full))
@@ -31,8 +37,7 @@ class UnitGraph extends React.Component {
 
   generateGraph = (showHidden, hierarchical) => {
     this.generator.reset()
-    if (this.state.filter)
-      this.generator.setIgnored(this.state.filter.split(/[ ,]+/).filter(Boolean))
+    this.generator.setIgnored(this.state.filter.selected)
     
     let result = this.generator.generateGraph(showHidden, hierarchical == hierarchical_full)
 
@@ -49,9 +54,22 @@ class UnitGraph extends React.Component {
     }
   }
 
-  filterUpdate = (e) => {
-    e.preventDefault()
-    this.setState(this.generateGraph(this.state.showHidden, this.state.hierarchical))
+  refreshGraph = (showHidden=this.state.showHidden, hierarchical=this.state.hierarchical) => {
+    this.setState(this.generateGraph(showHidden, hierarchical))
+  }
+
+  filterSearch = (query) => {
+    SearchUtils.searchUnits(query, (res) => {
+      this.state.filter.options = res
+      this.state.filter.loading = false
+      this.setState({ filter: this.state.filter })
+    })
+  }
+
+  filterSelect = (e) => {
+    this.state.filter.selected = e.map(x => x.code)
+    this.setState({ filter: this.state.filter })
+    this.refreshGraph()
   }
 
   toggleStandalone = (e) => {
@@ -66,7 +84,7 @@ class UnitGraph extends React.Component {
 
   toggleHiddenGraph = (e) => {
     e.preventDefault()
-    this.setState(this.generateGraph(!this.state.showHidden, this.state.hierarchical))
+    this.refreshGraph(!this.state.showHIdden, this.state.hierarchical)
   }
 
   nextHierarchicalOption = () => {
@@ -76,7 +94,7 @@ class UnitGraph extends React.Component {
   toggleHierarchical = (e) => {
     e.preventDefault()
     let next = this.nextHierarchicalOption()
-    this.setState(this.generateGraph(this.state.showHidden, next))
+    this.refreshGraph(this.state.showHidden, next)
   }
 
   showStandalone = () => { return this.state.lists == "standalone" }
@@ -124,11 +142,19 @@ class UnitGraph extends React.Component {
           </ul>
         </Collapse>
 
-{/* TODO: Typeahead this */}
-        <form className="row m-1">
-          <input type="text" className="form-control col-sm-10 mr-1" onChange={ e => this.setState({ filter: e.target.value }) } onKeyDown={ e => { if (e.key === 'Enter') this.filterUpdate(e) } } placeholder="Ignored unit codes (separated by spaces or commas)"></input>
-          <button type="submit" className="btn btn-primary col-sm-1 ml-1" onClick={this.filterUpdate}> Filter </button>
-        </form>
+        <AsyncTypeahead
+          id="FilterSearch"
+          className="m-1"
+          isLoading={this.state.filter.loading}
+          options={this.state.filter.options}
+          labelKey={SearchUtils.labelKey}
+          renderToken={SearchUtils.renderTypeaheadToken}
+          minLength={3}
+          multiple={true}
+          onSearch={this.filterSearch}
+          onChange={this.filterSelect}
+          placeholder="Ignored Units..."
+        />
 
         {
           this.state.graph.nodes.length == 0 ? 

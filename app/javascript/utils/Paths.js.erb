@@ -1,0 +1,10 @@
+<% helpers = Rails.application.routes.url_helpers %>
+
+export default {
+  root: "<%= helpers.root_path %>",
+  search: {
+    all: (q) => `<%= helpers.api_search_path %>?query=${q}`,
+    courses: (q) => `<%= helpers.api_search_courses_path %>?query=${q}`,
+    units: (q) => `<%= helpers.api_search_units_path %>?query=${q}`
+  }
+}

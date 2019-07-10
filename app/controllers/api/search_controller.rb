@@ -11,11 +11,11 @@ module Api
     end
 
     def courses
-      render json: Course.search(params[:query]).limit(10)
+      render json: Course.search(params[:query]).limit(10), root: 'results'
     end
 
     def units
-      render json: Unit.search(params[:query]).limit(10)
+      render json: Unit.search(params[:query]).limit(10), root: 'results'
     end
   end
 end
