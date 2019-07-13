@@ -1,5 +1,7 @@
 FROM jaci/rails-base:5.2.3-alpine
 
+RUN apk add --no-cache sqlite-dev
+
 # Bundle install Gemfile first to take advantage of caching
 COPY ./Gemfile /app/Gemfile
 COPY ./Gemfile.lock /app/Gemfile.lock
