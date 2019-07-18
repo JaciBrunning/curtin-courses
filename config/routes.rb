@@ -27,5 +27,7 @@ Rails.application.routes.draw do
         get :courses
       end
     end
+
+    get 'availability/unit/schema', to: 'units#availability_schema'
   end
 end

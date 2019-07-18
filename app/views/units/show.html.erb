@@ -3,10 +3,11 @@
 <p>
 <i class="fas fa-book">&nbsp;</i> <a href="<%= @unit.url %>" target="_blank"> Handbook </a> <br />
 <i class="fas fa-coins">&nbsp;</i> <%= @unit.credits %> Credits <br />
+<i class="fas fa-check">&nbsp;</i> Available in <%= @unit.unit_availabilities.map { |x| "#{x.year} #{x.period}" }.uniq.sort.join(", ") %> <br />
 <i class="fas fa-graduation-cap"></i> <a href="<%= unit_courses_path(@unit.code) %>"><%= pluralize(@unit.courses.count, "Course") %></a> <br />
 <% if @unit.error %>
 <span class="tip" data-toggle="tooltip" data-placement="bottom" title="The prerequisites for this Unit are malformed in the Curtin Handbook" style="color: #bd0000">
-<i class="fas fa-exclamation-triangle">&nbsp;</i> <a href="<%= @unit.url %>" style="color: #bd0000">This unit has possible errors</a>
+<i class="fas fa-exclamation-triangle">&nbsp;</i> <a href="<%= @unit.url %>" style="color: #bd0000">This unit has possible errors</a> <br />
 </span>
 <% end %>
 </p>

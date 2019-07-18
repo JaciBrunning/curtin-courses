@@ -27,7 +27,7 @@ endpoints = [
     category: "Units",
     endpoints: [
       { path: "/api/units", example: "/api/units", desc: "Brief description of all units. This is a large data endpoint." },
-      { path: "/api/units/:code", params: ":code", example: "/api/units/MXEN2000", desc: "Full description of a single unit, including it's prerequisites postfix expression." },
+      { path: "/api/units/:code", params: ":code", example: "/api/units/MXEN2000", desc: "Full description of a single unit, including it's prerequisites postfix expression. Multiple units can be selected by separating them via commas." },
       { path: "/api/units/:code/courses", params: ":code", example: "/api/units/MXEN2000/courses", desc: "Same as the /api/units/:code endpoint, but includes a listing of all courses this unit belongs to." }
     ]
   },

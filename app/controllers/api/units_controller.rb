@@ -5,11 +5,22 @@ module Api
     end
 
     def show
-      render json: Unit.find_by_code(params[:code])
+      render json: Unit.where(code: params[:code].split(','))
     end
 
     def courses
       render json: Unit.find_by_code(params[:code]), courses: true
+    end
+
+    # Availabilities
+
+    def availability_schema
+      dist = UnitAvailability.distinct
+      render json: {
+        years: dist.pluck(:year).sort,
+        periods: dist.pluck(:period).sort,
+        locations: dist.pluck(:location).sort
+      }
     end
   end
 end
