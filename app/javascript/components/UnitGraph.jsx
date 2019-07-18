@@ -83,7 +83,7 @@ class UnitGraph extends React.Component {
 
   toggleHiddenGraph = (e) => {
     e.preventDefault()
-    this.refreshGraph(!this.state.showHIdden, this.state.hierarchical)
+    this.refreshGraph(!this.state.showHidden, this.state.hierarchical)
   }
 
   nextHierarchicalOption = () => {
