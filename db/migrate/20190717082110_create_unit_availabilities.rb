@@ -8,6 +8,6 @@ class CreateUnitAvailabilities < ActiveRecord::Migration[5.2]
 
       t.timestamps
     end
-    add_index :unit_availabilities, [:unit_id, :year, :period, :location], unique: true
+    add_index :unit_availabilities, [:unit_id, :year, :period, :location], unique: true, name: 'unit_avails_idx'
   end
 end
