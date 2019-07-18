@@ -9,8 +9,9 @@ class UpdateSingleCourseJob < ApplicationJob
   UNIT_TITLE_REGEX = /([A-Z0-9-]{6,10}).\([a-zA-Z\.0-9]+\).(.+)/
   UNIT_MODIFICATION_BOUND = 1.day
 
-  def perform(url, parent=nil)
+  def perform(url, force=false, parent=nil)
     puts "Update Course: #{url}"
+    @force = force
 
     doc = Nokogiri::HTML(open(url))
     title = parse_course_title doc
@@ -29,7 +30,7 @@ class UpdateSingleCourseJob < ApplicationJob
       org_url = entry[:url]
       if org_url.include? "courses"
         # Is a stream, update the course and add a binding
-        UpdateSingleCourseJob.perform_now org_url, course.code
+        UpdateSingleCourseJob.perform_now org_url, @force, course.code
       else
         # Is a unit - do the work in (avoid loading more jobs)
         @current = org_url
@@ -80,7 +81,7 @@ class UpdateSingleCourseJob < ApplicationJob
   def update_unit url, course, org
     unit = Unit.find_by(url: url)
     # Update the unit if sufficiently old
-    if (unit.nil? || (Date.today - unit.updated_at.to_date) < UNIT_MODIFICATION_BOUND)
+    if (unit.nil? || @force || (Date.today - unit.updated_at.to_date) < UNIT_MODIFICATION_BOUND)
       # New unit - doesn't exist
       doc = Nokogiri::HTML(open(url))
       title = parse_unit_title doc
@@ -88,6 +89,7 @@ class UpdateSingleCourseJob < ApplicationJob
       # Insert unit record
 
       unit_details = parse_unit_details doc
+      avails = parse_unit_availabilities doc
 
       unit ||= Unit.new
       unit.code = title[:code]
@@ -98,6 +100,14 @@ class UpdateSingleCourseJob < ApplicationJob
       unit.prereqs = unit_details[:prereq].to_json
       unit.error = unit_details[:error]
       unit.save
+
+      avails.each do |avail|
+        UnitAvailability.find_or_create_by(
+          unit: unit, 
+          year: avail[:year], 
+          period: avail[:period], 
+          location: avail[:location])
+      end
     end
 
     # Bind the unit to a course
@@ -135,6 +145,21 @@ class UpdateSingleCourseJob < ApplicationJob
       end
     end
     h
+  end
+
+  def parse_unit_availabilities doc
+    avails = []
+    doc.css("table.compressed tr").each do |row|
+      cols = row.css("td")
+      if cols.size == 8
+        avails << {
+          year: cols[0].text,
+          location: cols[1].text,
+          period: cols[2].text
+        }
+      end
+    end
+    avails
   end
 
   def prereqs_to_postfix html

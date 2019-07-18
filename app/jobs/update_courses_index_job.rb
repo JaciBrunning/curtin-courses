@@ -4,8 +4,9 @@ require 'nokogiri'
 class UpdateCoursesIndexJob < ApplicationJob
   queue_as :default
 
-  def perform(listing_url=nil)
+  def perform(force=false, listing_url=nil)
     puts "Polling course index..."
+    @force = force
 
     if listing_url.nil?
       get_alphabet_entries.each { |url| process_listing url }
@@ -27,9 +28,9 @@ class UpdateCoursesIndexJob < ApplicationJob
     doc.css("div#content ul li a").each do |course_a|
       course_url = URI::join(url, course_a['href']).to_s
       if Rails.env.development?
-        UpdateSingleCourseJob.perform_now course_url
+        UpdateSingleCourseJob.perform_now course_url, @force
       else
-        UpdateSingleCourseJob.perform_later course_url
+        UpdateSingleCourseJob.perform_later course_url, @force
       end
     end
   end

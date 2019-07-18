@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2019_07_10_144022) do
+ActiveRecord::Schema.define(version: 2019_07_17_082110) do
 
   create_table "course_units", force: :cascade do |t|
     t.integer "course_id"
@@ -34,6 +34,16 @@ ActiveRecord::Schema.define(version: 2019_07_10_144022) do
     t.integer "stream_parent_id"
     t.index ["code"], name: "index_courses_on_code", unique: true
     t.index ["stream_parent_id"], name: "index_courses_on_stream_parent_id"
+  end
+
+  create_table "unit_availabilities", force: :cascade do |t|
+    t.integer "unit_id"
+    t.string "year"
+    t.string "period"
+    t.string "location"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["unit_id"], name: "index_unit_availabilities_on_unit_id"
   end
 
   create_table "units", force: :cascade do |t|

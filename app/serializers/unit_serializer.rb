@@ -8,6 +8,7 @@ class UnitSerializer < ActiveModel::Serializer
   attribute :error, if: :has_error?
 
   has_many :courses, if: :show_courses?
+  has_many :unit_availabilities, unless: :brief?
 
   def show_courses?
     @instance_options[:courses]
