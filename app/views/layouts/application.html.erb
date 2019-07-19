@@ -31,6 +31,9 @@
               <a class="nav-link" href="<%= info_path %>"> API & Info </a>
             </li>
             <li class="nav-item">
+              <a class="nav-link" href="<%= planner_index_path %>"> Planner </a>
+            </li>
+            <li class="nav-item">
               <a class="nav-link" href="https://github.com/JacisNonsense/curtin-courses"> Github <i class="fab fa-github"> &nbsp; </i> </a>
             </li>
           </ul>
@@ -38,7 +41,12 @@
       </div>
 
       <ul class="navbar-nav ml-auto">
-        <li class="nav-item"  style="width: 500px;"> <%= react_component("Search", { baseUrl: root_path, searchUrl: api_search_path }) %> </li>
+        <li class="nav-item"  style="width: 500px;"> 
+        <%= 
+        react_component("Search", {
+          selectUrl: File.join(root_path, ':type/:code'),
+          searchUrl: api_search_path
+        }) %> </li>
       </ul>
     </header>
 

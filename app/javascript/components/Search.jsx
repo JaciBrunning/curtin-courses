@@ -14,7 +14,7 @@ class Search extends React.Component {
 
   select = (e) => {
     let selection = e[0]
-    let url = `${this.props.baseUrl.replace(/\/+$/, '')}/${selection.type}/${selection.code}`
+    let url = this.props.selectUrl.replace(':type', selection.type).replace(':code', selection.code)
     window.location.href = url
   }
 

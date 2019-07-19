@@ -7,6 +7,10 @@ Rails.application.routes.draw do
   get 'legend', to: 'home#legend'
   get 'info', to: 'home#info'
 
+  resources :planner, only: [:index, :show], param: :course_code do
+    
+  end
+
   get 'course/:code', to: 'courses#show', as: 'course'
   get 'unit/:code', to: 'units#show', as: 'unit'
   get 'unit/:code/courses', to: 'units#courses', as: 'unit_courses'

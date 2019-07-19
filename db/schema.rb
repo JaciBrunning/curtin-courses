@@ -43,6 +43,7 @@ ActiveRecord::Schema.define(version: 2019_07_17_082110) do
     t.string "location"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["unit_id", "year", "period", "location"], name: "unit_avails_idx", unique: true
     t.index ["unit_id"], name: "index_unit_availabilities_on_unit_id"
   end
 

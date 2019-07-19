@@ -1,0 +1,10 @@
+<h1> Course Planner </h1>
+
+<h4> Please select the course you would like to plan: </h4>
+<br />
+<%=
+react_component("Search", {
+  searchUrl: api_search_courses_path,
+  selectUrl: planner_path(':code')
+})
+%>
