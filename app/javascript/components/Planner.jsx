@@ -1,135 +1,34 @@
 import React from 'react';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import InlineEdit from 'react-edit-inline-ff';
-import { groupBy, sortBy, partition, mapValues, find, includes } from 'lodash';
 import './planner.scss'
-import { list } from 'postcss';
+import { DragDropContext } from 'react-beautiful-dnd';
+import { groupBy, sortBy, partition, mapValues, find, includes } from 'lodash';
+import Unit from './planner/Unit';
+import { EasyDraggable, DroppableList } from './DnD';
+import { MaybeEditableTitle } from '../Title';
 
-class UnitItem extends React.Component {
+class UnitDraggable extends React.Component {
   state = {
     locked: false,
     completed: false
   }
 
-  toggleLocked = () => {
-    let lock = !this.state.locked
-    this.setState({ locked: lock })
-    if (this.props.onLock) this.props.onLock(lock)
-  }
-
-  toggleCompleted = () => {
-    let compl = !this.state.completed;
-    this.setState({ completed: compl })
-    if (this.props.onCompleted) this.props.onCompleted(compl)
-  }
-
-  divClass = () => {
-    let classes = ["unit-item"]
-    if (this.props.snapshot.isDragging) classes.push("dragging")
-
-    if (this.state.locked) classes.push("locked")
-    if (this.state.completed) classes.push("completed")
-    if (this.props.unit.highlight)
-      classes.push("highlight-" + this.props.unit.highlight)
-
-    return classes.join(" ")
-  }
-
   render() {
     return (
-      <div className={this.divClass()}>
-        <p className="unit-title">{ this.props.unit.code } { this.props.unit.abbrev ? ("(" + this.props.unit.abbrev + ")") : "" }</p>
-        <p className="unit-subtitle">{ this.props.unit.name }</p>
-        <div className="footer">
-          <span><i className="fas fa-coins">&nbsp;</i> { this.props.unit.credits }</span>
-          {
-            this.props.showControls ? <React.Fragment /> :
-              <span>
-                <a className="button" onClick={this.toggleLocked}>
-                  <i className={"fas fa-" + (this.state.locked ? "lock-open" : "lock")}>&nbsp;</i>
-                </a>
-                &nbsp;
-                <a className="button" onClick={this.toggleCompleted}>
-                  <i className={"fas fa-" + (this.state.completed ? "times" : "check")}>&nbsp;</i>
-                </a>
-              </span>
-          }
-        </div>
-      </div>
-    )
-  }
-}
-
-class UnitDraggable extends React.Component {
-  state = {
-    dragDisabled: false
-  }
-
-  render() {
-    return (
-      <Draggable draggableId={this.props.unit.code} isDragDisabled={this.state.dragDisabled} index={this.props.index}>
-        {
-          (provided, snap) => (
-            <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} >
-              <UnitItem 
-                snapshot={snap}
-                unit={this.props.unit}
-                onLock={b => this.setState({ dragDisabled: b })}
-                showControls={this.props.arena}
-              />
-            </div>
-          )
-        }
-      </Draggable>
-    )
-  }
-}
-
-class DroppableList extends React.Component {
-  state = {
-    title: this.props.title || 'Set Title...'
-  }
-
-  droppableClass = (snapshot) => {
-    let arr = ["droppable"]
-    if (snapshot.isDraggingOver) arr.push("draggedOver")
-
-    if (this.props.className) arr = arr.concat(this.props.className)
-    return arr.join(' ')
-  }
-
-  render() {
-    return (
-      <Droppable droppableId={ this.props.id } direction={ this.props.direction }>
-        {
-          (provided, snapshot) => (
-            <div className={this.droppableClass(snapshot)} ref={provided.innerRef} {...provided.droppableProps}>
-              {
-                this.props.children == 0 && this.props.hideTitleWhenEmpty ?
-                  <React.Fragment />
-                  : this.props.editableTitle ?
-                    <React.Fragment>
-                      <InlineEdit
-                        className="title title-edit"
-                        text={this.state.title}
-                        paramName="title"
-                        change={data => this.setState({title: data.title})}
-                      />
-                      <br />
-                    </React.Fragment>
-                    : <p className="title title-noedit">{ this.state.title }</p>
-
-              }
-              { this.props.pre }
-              <div className={"flex-container " + this.props.direction}>
-                { this.props.children }
-                { provided.placeholder }
-              </div>
-              { this.props.post }
-            </div>
-          )
-        }
-      </Droppable>
+      <EasyDraggable
+        id={this.props.unit.code}
+        index={this.props.index}
+        locked={this.state.locked}
+      >
+        { (provided, snapshot) => (
+          <Unit
+            {...this.state}
+            isDragging={snapshot.isDragging}
+            unit={this.props.unit}
+            onLock={b => this.setState({locked: b})}
+            onComplete={b => this.setState({completed: b})}
+            showControls={this.props.arena} />
+        )}
+      </EasyDraggable>
     )
   }
 }
@@ -137,10 +36,14 @@ class DroppableList extends React.Component {
 const Period = (props) => (
   <DroppableList
     {...props}
-    editableTitle
     className="period"
     pre={
       <React.Fragment>
+        <MaybeEditableTitle
+          editable
+          title={props.title}
+          onChange={props.onTitleChange} />
+        
         <i className="fas fa-coins">&nbsp;</i> {
           props.units.map(u => u.credits).reduce((a, b) => a + b, 0)
         }
@@ -153,7 +56,12 @@ const Arena = (props) => (
     {...props}
     hideTitleWhenEmpty
     title="Unassigned Units"
-    className="arena" />
+    className="arena"
+    pre={
+      <MaybeEditableTitle
+        title="Unassigned Units"
+        hide={props.children.length == 0} />
+    } />
 )
 
 class Planner extends React.Component {
