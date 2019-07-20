@@ -5,6 +5,7 @@ import { groupBy, sortBy, partition, mapValues, find, includes } from 'lodash';
 import Unit from './planner/Unit';
 import { EasyDraggable, DroppableList } from './DnD';
 import { MaybeEditableTitle } from '../Title';
+import { UnitCollection } from './planner/UnitCollection';
 
 class UnitDraggable extends React.Component {
   state = {
@@ -34,34 +35,19 @@ class UnitDraggable extends React.Component {
 }
 
 const Period = (props) => (
-  <DroppableList
-    {...props}
+  <UnitCollection
+    showTotalCredits
+    editableTitle
     className="period"
-    pre={
-      <React.Fragment>
-        <MaybeEditableTitle
-          editable
-          title={props.title}
-          onChange={props.onTitleChange} />
-        
-        <i className="fas fa-coins">&nbsp;</i> {
-          props.units.map(u => u.credits).reduce((a, b) => a + b, 0)
-        }
-      </React.Fragment>
-    } />
+    {...props} />
 )
 
 const Arena = (props) => (
-  <DroppableList
-    {...props}
-    hideTitleWhenEmpty
+  <UnitCollection
     title="Unassigned Units"
     className="arena"
-    pre={
-      <MaybeEditableTitle
-        title="Unassigned Units"
-        hide={props.children.length == 0} />
-    } />
+    hideTitle={ props.children.length == 0 }
+    {...props} />
 )
 
 class Planner extends React.Component {
