@@ -1,0 +1,125 @@
+@import '~bootstrap/scss/bootstrap';
+
+$selected-container-color: #ffeeff;
+$selected-unit-color: #eeffee;
+
+.arena {
+  background-color: #eee;
+  border-radius: 1em;
+  border: 0.25em #999;
+  border-style: dashed;
+  padding: 1em;
+  margin: 0.75em;
+  transition: 0.3s;
+
+  .title {
+    font-weight: bold;
+    font-style: italic;
+  }
+
+  &.draggedOver {
+    background-color: $selected-container-color;
+  }
+}
+
+.period {
+  border: 0.2em #999 solid;
+  border-radius: 1em;
+  padding: 0.75em;
+  transition: 0.3s;
+  margin: 0.75em;
+
+  .title {
+    border-bottom: 1px dotted;
+    font-weight: bold;
+  }
+
+  &.draggedOver {
+    background-color: $selected-container-color;
+  }
+}
+
+.flex-container {
+  @extend .d-flex;
+}
+
+.horizontal {
+  @extend .flex-row;
+
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.vertical {
+  @extend .flex-column;
+
+  min-width: 0;
+}
+
+.unit-item {
+  padding: 1em;
+  border-radius: 0.5em;
+  border: 0.2em #999 solid;
+  margin: 0.5em;
+  background-color: #fff;
+  transition: 0.3s;
+
+  max-width: 12em;
+  width: 12em;
+  font-size: 0.8rem;
+
+  p {
+    margin: 0;
+  }
+
+  .unit-title {
+    font-weight: bold;
+    font-size: 0.8rem;
+  }
+
+  .unit-subtitle {
+    font-style: italic;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  .footer {
+    @extend .d-flex;
+    @extend .justify-content-between;
+
+    font-size: 1rem;
+    .button {
+      transition: color 0.3s;
+      color: #222;
+
+      :hover {
+        color: #666;
+      }
+    }
+  }
+
+  &.dragging {
+    background-color: $selected-unit-color;
+  }
+
+  &.no-units {
+    font-style: italic;
+    border-style: dashed;
+    text-align: center;
+    background-color: #eee;
+  }
+
+  &.locked {
+    background-color: #eee;
+    color: #444;
+    border-style: dashed;
+  }
+
+  &.completed {
+    background-color: #bfb;
+  }
+
+  &.highlight-prereq {
+    box-shadow: 0 0 1em #44b;
+  }
+}

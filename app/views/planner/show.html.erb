@@ -23,5 +23,14 @@
 <i class="fas fa-project-diagram">&nbsp;</i> <a href="<%= course_path(@course.code) %>"> Go to course page </a>
 </p>
 
+<%=
+units = serialize(@course, units: true, include: '**').serializable_hash[:course][:course_units]
+if @course.stream_parent
+  units += serialize(@course.stream_parent, units: true, include: '**').serializable_hash[:course][:course_units]
+end
+react_component("Planner", {
+  units: units
+})
+%>
 
 <% end %>
