@@ -39,6 +39,18 @@ $selected-unit-color: #eeffee;
   }
 }
 
+.planner-controls {
+  @extend .m-2;
+
+  * {
+    @extend .m-1;
+  }
+
+  .save-load {
+    width: 75%;
+  }
+}
+
 .flex-container {
   @extend .d-flex;
 }
@@ -90,7 +102,6 @@ $selected-unit-color: #eeffee;
     font-size: 1rem;
     .button {
       transition: color 0.3s;
-      color: #222;
 
       :hover {
         color: #666;
@@ -116,7 +127,7 @@ $selected-unit-color: #eeffee;
   }
 
   &.completed {
-    background-color: #bfb;
+    background-color: #bfb !important;
   }
 
   &.highlight-prereq {
@@ -125,5 +136,18 @@ $selected-unit-color: #eeffee;
 
   &.highlight-prereq-transitive {
     box-shadow: 0 0 1em #444;
+  }
+
+  &.prereq-ready {
+    background-color: #ddf;
+  }
+
+  &.prereq-bad {
+    background-color: #fbb;
+  }
+
+  &.avail-bad:not(.completed) {
+    background-color: #622 !important;
+    color: #eee;
   }
 }

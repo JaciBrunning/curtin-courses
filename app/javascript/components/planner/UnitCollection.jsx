@@ -1,6 +1,6 @@
 import React from 'react';
 import { DroppableList } from '../DnD';
-import { MaybeEditableTitle } from '../../Title';
+import { MaybeEditableTitle } from '../Title';
 
 export const UnitCollection = (props) => (
   <DroppableList
@@ -14,10 +14,11 @@ export const UnitCollection = (props) => (
           hide={props.hideTitle} />
         
         {
-          props.showTotalCredits ? [
-            <i className="fas fa-coins">&nbsp;</i>,
-            props.units.map(u => u.credits).reduce((a, b) => a + b, 0)
-          ] : []
+          props.showTotalCredits ?
+            <React.Fragment>
+              <i className="fas fa-coins">&nbsp;</i>
+              { props.units.map(u => u.unit.credits).reduce((a, b) => a + b, 0) }
+            </React.Fragment> : []
         }
       </React.Fragment>
     }
