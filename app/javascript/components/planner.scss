@@ -122,4 +122,8 @@ $selected-unit-color: #eeffee;
   &.highlight-prereq {
     box-shadow: 0 0 1em #44b;
   }
+
+  &.highlight-prereq-transitive {
+    box-shadow: 0 0 1em #444;
+  }
 }

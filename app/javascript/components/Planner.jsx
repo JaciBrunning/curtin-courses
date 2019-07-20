@@ -1,11 +1,11 @@
 import React from 'react';
 import './planner.scss'
-import { DragDropContext } from 'react-beautiful-dnd';
-import { groupBy, sortBy, partition, mapValues, find, includes } from 'lodash';
+import _ from 'lodash';
 import Unit from './planner/Unit';
-import { EasyDraggable, DroppableList } from './DnD';
-import { MaybeEditableTitle } from '../Title';
+import { DragDropContext } from 'react-beautiful-dnd';
+import { EasyDraggable } from './DnD';
 import { UnitCollection } from './planner/UnitCollection';
+import { mapObject } from '../utils/CollectionUtils';
 
 class UnitDraggable extends React.Component {
   state = {
@@ -23,6 +23,7 @@ class UnitDraggable extends React.Component {
         { (provided, snapshot) => (
           <Unit
             {...this.state}
+            highlight={this.props.highlight}
             isDragging={snapshot.isDragging}
             unit={this.props.unit}
             onLock={b => this.setState({locked: b})}
@@ -44,9 +45,8 @@ const Period = (props) => (
 
 const Arena = (props) => (
   <UnitCollection
-    title="Unassigned Units"
     className="arena"
-    hideTitle={ props.children.length == 0 }
+    hideTitle={ !props.children || props.children.length == 0 }
     {...props} />
 )
 
@@ -55,19 +55,27 @@ class Planner extends React.Component {
     super(props)
     this.periodId = 0
 
-    let part = partition(this.props.units, u => u.optional)
+    this.allUnits = _.keyBy(Object.values(this.props.units).map(u => u.unit), 'code')
+
+    let part = _.partition(this.props.units, u => u.optional)
     let [optionals, non_optionals] = part;
     
-    let cu_periods = sortBy(non_optionals, 'planned_period')
-    let periodUnits = mapValues(groupBy(cu_periods, 'planned_period'), v => {
-      return { title: v[0].planned_period, units: v.map(u => u.unit) }
+    let periodMap = mapObject(_.groupBy(non_optionals, 'planned_period'), (k, v) => {
+      return {
+        title: k,
+        units: v.map(u => u.unit.code)
+      }
     })
-    
+
     this.state = {
-      orientation: 'horizontal',
-      orientationComplement: 'vertical',
-      periods: periodUnits,
-      arena: []
+      orientation: 'horizontal', orientationComplement: 'vertical',
+      collections: Object.keys(periodMap),
+      highlights: {},
+      arena: {
+        title: "Unassigned Units",
+        units: []
+      },
+      ...periodMap
     }
   }
 
@@ -78,78 +86,61 @@ class Planner extends React.Component {
     })
   }
 
-  refreshUnits = () => {
-    this.setState({ 
-      arena: this.state.arena,
-      periods: this.state.periods
-    })
-  }
-
-  getList = name => {
-    if (name == 'arena')
-      return this.state.arena
-    else
-      return this.state.periods[name].units
-  }
-
-  reorder = (list, from, to) => {
-    list.splice(to, 0, list.splice(from, 1)[0])
-  }
-
-  move = (srcList, destList, srcIndex, destIndex) => {
-    destList.splice(destIndex, 0, srcList.splice(srcIndex, 1)[0])
-  }
-
-  forEachUnitInArray = (codes, array, f) => {
-    array.forEach(v => {
-      if (includes(codes, v.code))
-        f(v)
-    })
-  }
-
-  forEachUnitIn = (codes, f) => {
-    this.forEachUnitInArray(codes, this.state.arena, f)
-    Object.keys(this.state.periods).forEach(k => {
-      this.forEachUnitInArray(codes, this.state.periods[k].units, f)
-    })
-  }
-
-  prereqsFor = (code, f) => {
-    let unit = find(this.props.units, u => u.unit.code == code).unit
-    if (unit.prereqs) {
-      this.forEachUnitIn(unit.prereqs.filter(x => x.length > 1), f)
+  assignPrereqs = (code, highlights={}, level=0) => {
+    let unit = this.allUnits[code]
+    if (level < 5 && unit) {
+      let prereqs = this.allUnits[code].prereqs
+      if (prereqs) {
+        prereqs.forEach(u => {
+          if (u.length > 1) {
+            highlights[u] = (level == 0 ? "prereq" : "prereq-transitive")
+            this.assignPrereqs(u, highlights, level + 1)
+          }
+        })
+      }
     }
+    return highlights
   }
 
   onDragStart = result => {
-    // Set highlight
-    this.prereqsFor(result.draggableId, u => {
-      u.highlight = 'prereq'
-    })
-
-    this.refreshUnits()
+    this.setState({ highlights: this.assignPrereqs(result.draggableId) })
   }
 
   onDragEnd = result => {
     let { source, destination } = result
     if (!destination) return;
 
-    let sourceList = this.getList(source.droppableId)
     if (source.droppableId == destination.droppableId) {
       // Reorder
-      this.reorder(sourceList, source.index, destination.index )
+      let srcUnitCopy = this.state[source.droppableId].units.slice()
+      srcUnitCopy.splice(destination.index, 0, srcUnitCopy.splice(source.index, 1)[0])
+
+      this.setState({ 
+        [source.droppableId]: {
+          ...this.state[source.droppableId],
+          units: srcUnitCopy
+        },
+        highlights: {}
+      })
     } else {
       // Move to another list
-      let destList = this.getList(destination.droppableId)
-      this.move(sourceList, destList, source.index, destination.index)
+      let srcUnitCopy = this.state[source.droppableId].units.slice()
+      let removed = srcUnitCopy.splice(source.index, 1)[0]
+      let dstUnitCopy = this.state[destination.droppableId].units.slice()
+      dstUnitCopy.splice(destination.index, 0, removed)
+
+      this.setState({
+        [source.droppableId]: {
+          ...this.state[source.droppableId],
+          units: srcUnitCopy
+        },
+        [destination.droppableId]: {
+          ...this.state[destination.droppableId],
+          units: dstUnitCopy
+        },
+        highlights: {}
+      })
     }
-
-    // Clear highlight
-    this.prereqsFor(result.draggableId, u => {
-      u.highlight = undefined
-    })
-
-    this.refreshUnits()
   }
 
   render() {
@@ -160,35 +151,48 @@ class Planner extends React.Component {
           Flip Orientation
         </button>
 
-        <div className={ "flex-container " + this.state.orientation  }>
-          <Arena id="arena" direction={this.state.orientationComplement}>
+        <div className={ "flex-container " + this.state.orientation }>
+          <Arena id="arena" title={this.state.arena.title} direction={this.state.orientationComplement}>
             {
-              this.state.arena.map((unit, index) =>
-                <UnitDraggable 
-                  arena
-                  key={unit.code}
-                  unit={unit}
-                  index={index}
-                />
-              )
+              this.state.arena.units.map((code, index) => {
+                let unit = this.allUnits[code]
+                return (
+                  <UnitDraggable
+                    key={unit.code}
+                    unit={unit}
+                    index={index}
+                    highlight={this.state.highlights[unit.code]} />
+                )
+              })
             }
           </Arena>
-          <div className={"flex-container " + this.state.orientationComplement}>
+
+          <div className={ "flex-container " + this.state.orientationComplement }>
             {
-              Object.keys(this.state.periods).map(k => {
-                let v = this.state.periods[k]
-                return <Period key={k} id={k} direction={this.state.orientation} title={v.title} units={v.units}>
-                  {
-                    v.units.length > 0 ? 
-                      v.units.map((unit, index) =>
+              this.state.collections.map(k => {
+                let v = this.state[k]
+                let units = v.units.map(code => this.allUnits[code])
+
+                return (
+                  <Period
+                    key={k}
+                    id={k}
+                    direction={this.state.orientation}
+                    title={v.title}
+                    units={units}>
+
+                    {
+                      units.length > 0 ?
+                        units.map((unit, index) =>
                           <UnitDraggable
                             key={unit.code}
                             unit={unit}
                             index={index}
-                          />
-                      ) : <div className="unit-item no-units"><p> No Units Selected </p></div>
-                  }
-                </Period>
+                            highlight={this.state.highlights[unit.code]} />
+                        ) : <div className="unit-item no-units"><p>No Units Selected</p></div>
+                    }
+                  </Period>
+                )
               })
             }
           </div>
