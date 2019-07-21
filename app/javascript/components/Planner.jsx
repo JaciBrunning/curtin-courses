@@ -1,5 +1,4 @@
 import React from 'react';
-import './planner.scss'
 import _ from 'lodash';
 import update from 'immutability-helper';
 import Unit from './planner/Unit';
