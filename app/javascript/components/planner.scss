@@ -34,6 +34,10 @@ $selected-unit-color: #eeffee;
     font-weight: bold;
   }
 
+  &.period-avail-match {
+    background-color: #bbffff;
+  }
+
   &.draggedOver {
     background-color: $selected-container-color;
   }
@@ -146,8 +150,7 @@ $selected-unit-color: #eeffee;
     background-color: #fbb;
   }
 
-  &.avail-bad:not(.completed) {
-    background-color: #622 !important;
-    color: #eee;
+  &.avail-bad {
+    box-shadow: 0 0 1em #622;
   }
 }

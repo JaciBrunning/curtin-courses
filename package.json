@@ -23,7 +23,8 @@
     "react-graph-vis": "^1.0.2",
     "react-motion": "^0.5.2",
     "react_ujs": "^2.5.0",
-    "truncate": "^2.1.0"
+    "truncate": "^2.1.0",
+    "uuid": "^3.3.2"
   },
   "devDependencies": {
     "webpack-dev-server": "^3.7.2"

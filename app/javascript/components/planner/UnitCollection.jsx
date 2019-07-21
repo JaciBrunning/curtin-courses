@@ -7,6 +7,10 @@ export const UnitCollection = (props) => (
     {...props}
     pre={
       <React.Fragment>
+        {
+          !props.canRemove ? [] :
+          <a onClick={e => props.onRemove(props.id)}><i className="fas fa-times">&nbsp;</i></a>
+        }
         <MaybeEditableTitle
           editable={props.editableTitle}
           title={props.title}

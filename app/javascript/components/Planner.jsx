@@ -4,11 +4,12 @@ import _ from 'lodash';
 import update from 'immutability-helper';
 import Unit from './planner/Unit';
 import MultiUnit from './planner/MultiUnit';
+import uuidv1 from 'uuid/v1';
 import { DragDropContext } from 'react-beautiful-dnd';
 import { EasyDraggable } from './DnD';
 import { UnitCollection } from './planner/UnitCollection';
 import { mapObject } from '../utils/CollectionUtils';
-import { calcPrereqs } from '../utils/PlannerUtils';
+import { calcPrereqs, estimateAvailability } from '../utils/PlannerUtils';
 
 const UnitDraggable = (props) => (
   <EasyDraggable
@@ -33,7 +34,7 @@ const UnitDraggable = (props) => (
 const Period = (props) => (
   <UnitCollection
     editableTitle
-    className="period"
+    className={ "period " + props.class }
     {...props} />
 )
 
@@ -47,20 +48,17 @@ const Arena = (props) => (
 class Planner extends React.Component {
   constructor(props) {
     super(props)
-    this.periodId = 0
 
     let urlParams = new URLSearchParams(window.location.search)
     this.allUnits = _.keyBy(Object.values(this.props.units).map(u => u.unit), 'code')
+    let part = _.partition(this.props.units, u => u.optional)
+    let [optionals, non_optionals] = part;
+    this.optionalChoices = _.groupBy(optionals, 'planned_period')
 
     if (urlParams.has('load')) {
       // TODO: Validate state
       this.state = JSON.parse(atob(urlParams.get('load')))
     } else {
-      let part = _.partition(this.props.units, u => u.optional)
-      let [optionals, non_optionals] = part;
-      
-      this.optionalChoices = _.groupBy(optionals, 'planned_period')
-
       let periodMap = mapObject(_.groupBy(non_optionals, 'planned_period'), (k, v) => {
         return {
           id: k,
@@ -73,6 +71,7 @@ class Planner extends React.Component {
         orientation: 'horizontal', orientationComplement: 'vertical',
         collections: Object.keys(periodMap).sort(),
         highlights: {},
+        highlightAvail: [],
         prereqs: {},
         arena: {
           id: 'arena',
@@ -103,6 +102,10 @@ class Planner extends React.Component {
       })
     })
     return found
+  }
+
+  canChooseUnit = code => {
+    return this.findAllUnitsByCode(code).length == 0
   }
 
   splitOptional = (period, index, selected) => {
@@ -156,12 +159,8 @@ class Planner extends React.Component {
             chosen: {
               $splice: [[parentRef.chosenIdx, 1]]
             },
-            hidden: {
-              $set: false
-            },
-            credits: {
-              $set: parentU.credits + usUnit.credits
-            }
+            hidden: { $set: false },
+            credits: { $set: parentU.credits + usUnit.credits }
           }
         }
       }
@@ -174,9 +173,8 @@ class Planner extends React.Component {
           $splice: [[index, 1]]
         }
       },
-      highlights: {
-        $set: {}
-      }
+      highlights: { $set: {} },
+      highlightAvail: { $set: [] }
     })
 
     this.updateWithPrereqs(nextState)
@@ -266,7 +264,10 @@ class Planner extends React.Component {
   }
 
   onDragStart = result => {
-    this.setState({ highlights: this.assignPrereqs(result.draggableId) })
+    this.setState({
+      highlights: this.assignPrereqs(result.draggableId),
+      highlightAvail: this.allUnits[result.draggableId].unit_availabilities
+    })
   }
 
   onDragEnd = result => {
@@ -278,6 +279,8 @@ class Planner extends React.Component {
       if (this.state[srcPeriod].units[srcIdx].optRef) {
         // Optional dragged outside - remove it
         this.removeOptional(srcPeriod, srcIdx)
+      } else {
+        this.setState({ highlights: {}, highlightAvail: {} })
       }
       return;
     }
@@ -296,7 +299,8 @@ class Planner extends React.Component {
           ...this.state[srcPeriod],
           units: srcUnitCopy
         },
-        highlights: {}
+        highlights: {},
+        highlightAvail: []
       }
 
       this.updateWithPrereqs(nextState)
@@ -316,7 +320,8 @@ class Planner extends React.Component {
           ...this.state[dstPeriod],
           units: dstUnitCopy
         },
-        highlights: {}
+        highlights: {},
+        highlightAvail: []
       }
 
       this.updateWithPrereqs(nextState)
@@ -338,6 +343,7 @@ class Planner extends React.Component {
           unit={unit}
           getUnit={this.getUnit}
           getOptionalChoices={this.getOptionalChoices}
+          canChooseUnit={this.canChooseUnit}
           splitOptional={(selected) => this.splitOptional(container.id, index, selected)}
           highlight={this.state.highlights[unit.code]}
           prereqStatus={this.state.prereqs[unit.code]}
@@ -347,6 +353,42 @@ class Planner extends React.Component {
     })
   )
 
+  addPeriod = () => {
+    const id = `period-${uuidv1()}`
+    const nextState = update(this.state, {
+      [id]: {
+        $set: {
+          id: id,
+          title: "Set Title...",
+          canRemove: true,
+          units: []
+        }
+      },
+      collections: {
+        $push: [ id ]
+      }
+    })
+
+    this.setState(nextState)
+  }
+
+  removePeriod = (period) => {
+    const nextState = update(this.state, {
+      arena: {
+        units: {
+          $push: this.state[period].units
+        },
+      },
+      collections: {
+        $splice: [[ this.state.collections.indexOf(period), 1 ]]
+      },
+      [period]: {
+        $set: undefined
+      }
+    })
+    this.setState(nextState)
+  }
+
   render() {
     return (
       <DragDropContext onDragStart={this.onDragStart} onDragEnd={this.onDragEnd}>
@@ -354,6 +396,9 @@ class Planner extends React.Component {
           <button className="btn btn-primary" onClick={this.flipOrientation}>
             <i className="fas fa-sync">&nbsp;</i>
             Flip Orientation
+          </button>
+          <button className="btn btn-success" onClick={this.addPeriod}>
+            <i className="fas fa-plus"></i>
           </button>
           <input type="text" className="form-control save-load" value={this.getStateURL()} disabled />
         </div>
@@ -369,11 +414,17 @@ class Planner extends React.Component {
                 let v = this.state[k]
 
                 return (
-                  <Period key={k} id={k}
+                  <Period 
+                    key={k} id={k}
                     direction={this.state.orientation}
                     title={v.title}
+                    canRemove={v.canRemove}
+                    onRemove={this.removePeriod}
+                    class={
+                      estimateAvailability(v.title, this.state.highlightAvail) ? 
+                        "period-avail-match" : ""
+                    }
                     onTitleChange={d => this.changeTitle(k, d.title)}>
-
                     { this.unitsFor(v) }
                   </Period>
                 )

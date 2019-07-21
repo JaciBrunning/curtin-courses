@@ -47,7 +47,7 @@ export function calcPrereqs(code, out, internalUnits, levelOf, isCompleted) {
 
           let operands = []
           let opA = tryResolveToOperand(code, a, out, internalUnits, levelOf, isCompleted)
-          let opB = tryResolveToOperand(code, a, out, internalUnits, levelOf, isCompleted)
+          let opB = tryResolveToOperand(code, b, out, internalUnits, levelOf, isCompleted)
 
           if (opA) operands.push(opA)
           if (opB) operands.push(opB)
