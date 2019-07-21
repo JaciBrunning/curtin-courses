@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2019_07_21_042559) do
+ActiveRecord::Schema.define(version: 2019_07_21_102230) do
 
   create_table "course_units", force: :cascade do |t|
     t.integer "course_id"
@@ -20,7 +20,7 @@ ActiveRecord::Schema.define(version: 2019_07_21_042559) do
     t.string "planned_period"
     t.integer "planned_level", default: 0
     t.boolean "optional", default: false
-    t.index ["course_id", "unit_id"], name: "index_course_units_on_course_id_and_unit_id", unique: true
+    t.index ["course_id", "unit_id", "planned_period"], name: "index_course_units_uniq", unique: true
     t.index ["course_id"], name: "index_course_units_on_course_id"
     t.index ["unit_id"], name: "index_course_units_on_unit_id"
   end

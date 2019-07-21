@@ -147,9 +147,8 @@ class UpdateSingleCourseJob < ApplicationJob
 
     # Bind the unit to a course
 
-    bind = CourseUnit.find_or_initialize_by(course: course, unit: unit)
+    bind = CourseUnit.find_or_initialize_by(course: course, unit: unit, planned_period: org[:planned])
     bind.optional = org[:optional]
-    bind.planned_period = org[:planned]
     bind.planned_level = org[:planned_lvl]
     bind.save
   end
@@ -162,9 +161,8 @@ class UpdateSingleCourseJob < ApplicationJob
     unit.freeform_period = org[:unit][:freeform_period] unless org[:freeform] == :elective
     unit.save
 
-    bind = CourseUnit.find_or_initialize_by(course: course, unit: unit)
+    bind = CourseUnit.find_or_initialize_by(course: course, unit: unit, planned_period: org[:course_unit][:planned])
     bind.optional = org[:course_unit][:optional]
-    bind.planned_period = org[:course_unit][:planned]
     bind.planned_level = org[:course_unit][:planned_lvl]
     bind.save
   end
