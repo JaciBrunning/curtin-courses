@@ -173,6 +173,7 @@ class GraphGenerator {
   _optimize = () => {
     let nodeSet = this.nodes
     this.nodes = {}
+    let optimizedNodes = {}
 
     Object.keys(nodeSet).forEach((key) => {
       let node = nodeSet[key]
@@ -217,12 +218,14 @@ class GraphGenerator {
                 source_incoming.forEach(e => (e.to = node.id))
               } else {
                 // OR has multiple targets, put it back into the node set
-                this.nodes[source.id] = source
+                if (!(source.id in optimizedNodes))
+                  this.nodes[source.id] = source
               }
             } else if (source != undefined) {
               // Is not an OR, put it back into the node set
               // TODO: this an error?
-              this.nodes[source.id] = source
+              if (!(source.id in optimizedNodes))
+                this.nodes[source.id] = source
             }
           })
         } else {
@@ -238,7 +241,12 @@ class GraphGenerator {
         // }
       }
 
-      if (!optimized) this.nodes[node.id] = node
+      if (optimized) {
+        optimizedNodes[node.id] = true
+        if (node.id in this.nodes)
+          delete this.nodes[node.id]
+      } else
+        this.nodes[node.id] = node
     })
   }
 
