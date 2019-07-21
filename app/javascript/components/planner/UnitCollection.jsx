@@ -12,14 +12,6 @@ export const UnitCollection = (props) => (
           title={props.title}
           onChange={props.onTitleChange}
           hide={props.hideTitle} />
-        
-        {
-          props.showTotalCredits ?
-            <React.Fragment>
-              <i className="fas fa-coins">&nbsp;</i>
-              { props.units.map(u => u.unit.credits).reduce((a, b) => a + b, 0) }
-            </React.Fragment> : []
-        }
       </React.Fragment>
     }
     />

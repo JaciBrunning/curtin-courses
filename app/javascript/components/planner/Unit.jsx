@@ -2,10 +2,47 @@ import React from 'react';
 import { estimateAvailability } from '../../utils/PlannerUtils';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 
-class Unit extends React.PureComponent {
-  toggleLocked = () => this.props.onChange('locked', !this.props.locked)
-  toggleCompleted = () => this.props.onChange('completed', !this.props.completed)
+export class AbstractUnit extends React.PureComponent {
+  changeMerge = (obj) => this.props.onChange(obj)
+  change = (name, val) => this.changeMerge({ [name]: val })
+  toggleLocked = () => this.change('locked', !this.props.locked)
+  toggleCompleted = () => this.change('completed', !this.props.completed)
 
+  available = () => true
+  credits = () => this.props.unit.credits
+
+  availabilityTooltip = () => (
+    <OverlayTrigger placement="left" overlay={
+      <Tooltip id={`tt-${this.props.unit.code}`}>
+        This unit may be unavailable during this study period.
+        (Available periods: { _.uniq(this.props.unit.unit_availabilities.map(x => x.period)).join(", ") })
+      </Tooltip>
+    }>
+      <span className="tip">Unavailable</span>
+    </OverlayTrigger>
+  )
+
+  footer = (showControls=true) => (
+    <div className="footer">
+      <span><i className="fas fa-coins">&nbsp;</i> { this.credits() }</span>
+  
+      {
+        !showControls ? [] :
+          <span>
+          <a className="button" onClick={this.toggleLocked}>
+            <i className={"fas fa-" + (this.props.locked ? "lock-open" : "lock")}>&nbsp;</i>
+          </a>
+          &nbsp;
+          <a className="button" onClick={this.toggleCompleted}>
+            <i className={"fas fa-" + (this.props.completed ? "times" : "check")}>&nbsp;</i>
+          </a>
+        </span>
+      }
+    </div>
+  )
+}
+
+export class Unit extends AbstractUnit {
   available = () => {
     return this.props.container.id === 'arena' || estimateAvailability(this.props.container.title, this.props.unit.unit_availabilities)
   }
@@ -34,29 +71,8 @@ class Unit extends React.PureComponent {
       <div className={this.divClass()}>
         <p className="unit-title">{ this.props.unit.code } { this.props.unit.abbrev ? ("(" + this.props.unit.abbrev + ")") : "" }</p>
         <p className="unit-subtitle">{ this.props.unit.name }</p>
-        {
-            !this.available() ? 
-            <OverlayTrigger placement="right" overlay={
-              <Tooltip id={`tt-${this.props.unit.code}`}>
-                This unit may be unavailable during this study period.
-              </Tooltip>
-            }>
-              <span className="tip">Unavailable</span>
-            </OverlayTrigger> : []
-          }
-        <div className="footer">
-          <span><i className="fas fa-coins">&nbsp;</i> { this.props.unit.credits }</span>
-      
-          <span>
-            <a className="button" onClick={this.toggleLocked}>
-              <i className={"fas fa-" + (this.props.locked ? "lock-open" : "lock")}>&nbsp;</i>
-            </a>
-            &nbsp;
-            <a className="button" onClick={this.toggleCompleted}>
-              <i className={"fas fa-" + (this.props.completed ? "times" : "check")}>&nbsp;</i>
-            </a>
-          </span>
-        </div>
+        { !this.available() ? this.availabilityTooltip() : [] }
+        { this.footer() }
       </div>
     )
   }

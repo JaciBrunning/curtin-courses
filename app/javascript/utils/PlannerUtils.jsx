@@ -106,3 +106,11 @@ export function calcPrereqs(code, out, internalUnits, levelOf, isCompleted) {
     }
   }
 }
+
+// export function removeUnitFrom(state, period, index) {
+//   let unitCopy = state[period].units.slice()
+//   unitCopy.splice(index, 1)[0]
+//   return {
+
+//   }
+// }

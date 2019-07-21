@@ -1,7 +1,9 @@
 import React from 'react';
 import './planner.scss'
 import _ from 'lodash';
+import update from 'immutability-helper';
 import Unit from './planner/Unit';
+import MultiUnit from './planner/MultiUnit';
 import { DragDropContext } from 'react-beautiful-dnd';
 import { EasyDraggable } from './DnD';
 import { UnitCollection } from './planner/UnitCollection';
@@ -15,17 +17,21 @@ const UnitDraggable = (props) => (
     locked={props.locked}
   >
     { (provided, snapshot) => (
-      <Unit
-        {...props}
-        isDragging={snapshot.isDragging}
-        unit={props.unit} />
+      props.unit.freeform ? 
+        <MultiUnit
+          {...props}
+          isDragging={snapshot.isDragging}
+          unit={props.unit} /> :
+        <Unit
+          {...props}
+          isDragging={snapshot.isDragging}
+          unit={props.unit} />
     )}
   </EasyDraggable>
 )
 
 const Period = (props) => (
   <UnitCollection
-    showTotalCredits
     editableTitle
     className="period"
     {...props} />
@@ -53,6 +59,8 @@ class Planner extends React.Component {
       let part = _.partition(this.props.units, u => u.optional)
       let [optionals, non_optionals] = part;
       
+      this.optionalChoices = _.groupBy(optionals, 'planned_period')
+
       let periodMap = mapObject(_.groupBy(non_optionals, 'planned_period'), (k, v) => {
         return {
           id: k,
@@ -74,6 +82,104 @@ class Planner extends React.Component {
         ...periodMap
       })
     }
+  }
+
+  getUnit = code => this.allUnits[code]
+
+  getOptionalChoices = optionalCode => {
+    let choices = this.optionalChoices[this.getUnit(optionalCode).freeform_period]
+    if (choices) {
+      return choices.map(c => c.unit)
+    }
+    return undefined
+  }
+
+  findAllUnitsByCode = code => {
+    let found = []
+    this.state.collections.concat('arena').forEach(period => {
+      this.state[period].units.forEach((u, index) => {
+        if (u.code == code)
+          found.push({ period, index })
+      })
+    })
+    return found
+  }
+
+  splitOptional = (period, index, selected) => {
+    let optU = this.state[period].units[index]
+    let optUnit = this.getUnit(optU.code)
+
+    let nextCredits = ('credits' in optU ? optU.credits : optUnit.credits) - selected.credits
+
+    const optUnitState = {
+      credits: nextCredits,
+      hidden: nextCredits <= 0,
+      chosen: (optU.chosen || []).concat(selected.code)
+    }
+
+    // Add new unit
+    const newU = {
+      code: selected.code,
+      optRef: {
+        parent: optU.code
+      }
+    }
+
+    const nextState = update(this.state, {
+      [period]: {
+        units: {
+          $push: [newU],
+          [index]: {
+            $merge: optUnitState
+          }
+        }
+      }
+    })
+
+    this.updateWithPrereqs(nextState)
+  }
+
+  removeOptional = (period, index) => {
+    let us = this.state[period].units[index]
+    let usUnit = this.getUnit(us.code)
+    let parentCode = us.optRef.parent
+    let parentRef = this.findAllUnitsByCode(parentCode)[0]
+    let parentU = this.state[parentRef.period].units[parentRef.index]
+
+    parentRef.chosenIdx = parentU.chosen.indexOf(us.code)
+
+    // Remove from chosen list, update credits
+    const nextStateRemoveChosen = update(this.state, {
+      [parentRef.period]: {
+        units: {
+          [parentRef.index]: {
+            chosen: {
+              $splice: [[parentRef.chosenIdx, 1]]
+            },
+            hidden: {
+              $set: false
+            },
+            credits: {
+              $set: parentU.credits + usUnit.credits
+            }
+          }
+        }
+      }
+    })
+
+    // Remove unit
+    const nextState = update(nextStateRemoveChosen, {
+      [period]: {
+        units: {
+          $splice: [[index, 1]]
+        }
+      },
+      highlights: {
+        $set: {}
+      }
+    })
+
+    this.updateWithPrereqs(nextState)
   }
 
   flipOrientation = () => {
@@ -142,18 +248,16 @@ class Planner extends React.Component {
   }
 
   onChange = (period, index, hash) => {
-    let unitsSlice = this.state[period].units
-    unitsSlice[index] = {
-      ...unitsSlice[index],
-      ...hash
-    }
-
-    this.updateWithPrereqs({
+    const nextState = update(this.state, {
       [period]: {
-        ...this.state[period],
-        units: unitsSlice
+        units: {
+          [index]: {
+            $merge: hash
+          }
+        }
       }
     })
+    this.updateWithPrereqs(nextState)
   }
 
   getStateURL = () => {
@@ -167,40 +271,81 @@ class Planner extends React.Component {
 
   onDragEnd = result => {
     let { source, destination } = result
-    if (!destination) return;
+    let srcPeriod = source.droppableId
+    let srcIdx = source.index
+    
+    if (!destination) {
+      if (this.state[srcPeriod].units[srcIdx].optRef) {
+        // Optional dragged outside - remove it
+        this.removeOptional(srcPeriod, srcIdx)
+      }
+      return;
+    }
+
+    let srcUnitCopy = this.state[srcPeriod].units.slice()
+
+    let dstPeriod = destination.droppableId
+    let dstIdx = destination.index
 
     if (source.droppableId == destination.droppableId) {
       // Reorder
-      let srcUnitCopy = this.state[source.droppableId].units.slice()
-      srcUnitCopy.splice(destination.index, 0, srcUnitCopy.splice(source.index, 1)[0])
+      srcUnitCopy.splice(dstIdx, 0, srcUnitCopy.splice(srcIdx, 1)[0])
 
-      this.updateWithPrereqs({ 
-        [source.droppableId]: {
-          ...this.state[source.droppableId],
+      let nextState = {
+        [srcPeriod]: {
+          ...this.state[srcPeriod],
           units: srcUnitCopy
         },
         highlights: {}
-      })
+      }
+
+      this.updateWithPrereqs(nextState)
     } else {
       // Move to another list
-      let srcUnitCopy = this.state[source.droppableId].units.slice()
-      let removed = srcUnitCopy.splice(source.index, 1)[0]
-      let dstUnitCopy = this.state[destination.droppableId].units.slice()
-      dstUnitCopy.splice(destination.index, 0, removed)
+      let dstUnitCopy = this.state[dstPeriod].units.slice()
 
-      this.updateWithPrereqs({
-        [source.droppableId]: {
-          ...this.state[source.droppableId],
+      let removed = srcUnitCopy.splice(srcIdx, 1)[0]
+      dstUnitCopy.splice(dstIdx, 0, removed)
+
+      let nextState = {
+        [srcPeriod]: {
+          ...this.state[srcPeriod],
           units: srcUnitCopy
         },
-        [destination.droppableId]: {
-          ...this.state[destination.droppableId],
+        [dstPeriod]: {
+          ...this.state[dstPeriod],
           units: dstUnitCopy
         },
         highlights: {}
-      })
+      }
+
+      this.updateWithPrereqs(nextState)
     }
   }
+
+  unitsFor = (container) => (
+    container.units.map((u, index) => {
+      if (u.hidden) return []
+
+      let code = u.code
+      let unit = this.getUnit(code)
+
+      return (
+        <UnitDraggable
+          {...u}
+          key={unit.code}
+          index={index}
+          unit={unit}
+          getUnit={this.getUnit}
+          getOptionalChoices={this.getOptionalChoices}
+          splitOptional={(selected) => this.splitOptional(container.id, index, selected)}
+          highlight={this.state.highlights[unit.code]}
+          prereqStatus={this.state.prereqs[unit.code]}
+          container={container}
+          onChange={(arg) => this.onChange(container.id, index, arg)} />
+      )
+    })
+  )
 
   render() {
     return (
@@ -215,53 +360,21 @@ class Planner extends React.Component {
 
         <div className={ "flex-container " + this.state.orientation }>
           <Arena id="arena" title={this.state.arena.title} direction={this.state.orientationComplement}>
-            {
-              this.state.arena.units.map((u, index) => {
-                let code = u.code
-                let unit = this.allUnits[code]
-                return (
-                  <UnitDraggable
-                    {...u}
-                    key={unit.code}
-                    unit={unit}
-                    index={index}
-                    highlight={this.state.highlights[unit.code]}
-                    prereqStatus={this.state.prereqs[unit.code]}
-                    container={this.state.arena}
-                    onChange={(k,v) => this.onChange('arena', index, { [k]: v })} />
-                )
-              })
-            }
+            { this.unitsFor(this.state.arena) }
           </Arena>
 
           <div className={ "flex-container " + this.state.orientationComplement }>
             {
               this.state.collections.map(k => {
                 let v = this.state[k]
-                let units = v.units.map(u => ({ unit: this.allUnits[u.code], ...u }))
 
                 return (
-                  <Period
-                    key={k}
-                    id={k}
+                  <Period key={k} id={k}
                     direction={this.state.orientation}
                     title={v.title}
-                    units={units}
                     onTitleChange={d => this.changeTitle(k, d.title)}>
 
-                    {
-                      units.length > 0 ?
-                        units.map((unit, index) =>
-                          <UnitDraggable
-                            {...unit}
-                            key={unit.code}
-                            index={index}
-                            highlight={this.state.highlights[unit.code]}
-                            prereqStatus={this.state.prereqs[unit.code]}
-                            container={v}
-                            onChange={(kh,vh) => this.onChange(k, index, { [kh]: vh })} />
-                        ) : <div className="unit-item no-units"><p>No Units Selected</p></div>
-                    }
+                    { this.unitsFor(v) }
                   </Period>
                 )
               })
