@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2019_07_17_082110) do
+ActiveRecord::Schema.define(version: 2019_07_21_042559) do
 
   create_table "course_units", force: :cascade do |t|
     t.integer "course_id"
@@ -57,6 +57,8 @@ ActiveRecord::Schema.define(version: 2019_07_17_082110) do
     t.datetime "updated_at", null: false
     t.string "error"
     t.string "abbrev"
+    t.boolean "freeform", default: false
+    t.string "freeform_period"
     t.index ["code"], name: "index_units_on_code", unique: true
   end
 

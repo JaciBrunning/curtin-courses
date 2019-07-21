@@ -1,5 +1,7 @@
 require 'open-uri'
 require 'nokogiri'
+require 'base64'
+require 'digest'
 
 class UpdateSingleCourseJob < ApplicationJob
   queue_as :default
@@ -28,7 +30,10 @@ class UpdateSingleCourseJob < ApplicationJob
 
     parse_organisation(url, doc).each do |entry|
       org_url = entry[:url]
-      if org_url.include? "courses"
+      if entry[:freeform]
+        # Freeform unit - either optional or elective
+        update_freeform course, entry
+      elsif org_url.include? "courses"
         # Is a stream, update the course and add a binding
         UpdateSingleCourseJob.perform_now org_url, @force, course.code
       else
@@ -54,6 +59,7 @@ class UpdateSingleCourseJob < ApplicationJob
 
     doc.css("div#content table.fullwidth tr").each do |tr|
       them = tr.css("th em")
+      td = tr.css("td")
       tda = tr.css("td a")
       if them.count == 1
         # Parse title - could be describing a set of optionals
@@ -68,9 +74,38 @@ class UpdateSingleCourseJob < ApplicationJob
         else
           opt = false
         end
+      elsif td.count == 4
+        # Is an optional or elective unit
+        creditVal = td[3].text.to_f
+        type = td[1].text.include?("ELECTIVE") ? :elective : td[1].text.include?("OPTIONAL") ? :optional : nil
+        code = Base64.encode64(Digest::MD5.hexdigest("#{url}/#{planned}/#{type}")).strip[0..7]
+        if type
+          entries << {
+            freeform: type,
+            unit: {
+              code: "OPT-#{code}",
+              credits: creditVal,
+              abbrev: "OPT",
+              freeform_period: (type == :optional ? 
+                "Optional Units to Select from in #{planned}" 
+                : nil)
+            },
+            course_unit: {
+              optional: opt,
+              planned: planned,
+              planned_lvl: planned_lvl
+            }
+          }
+        end
       elsif tda.count == 1
         # Parse href, it's a link to a unit or stream
-        entries << { title: title, optional: opt, planned: planned, planned_lvl: planned_lvl, url: URI::join(url, tda.first['href']).to_s }
+        entries << {
+          title: title,
+          optional: opt,
+          planned: planned,
+          planned_lvl: planned_lvl,
+          url: URI::join(url, tda.first['href']).to_s
+        }
       end
     end
     entries
@@ -116,6 +151,21 @@ class UpdateSingleCourseJob < ApplicationJob
     bind.optional = org[:optional]
     bind.planned_period = org[:planned]
     bind.planned_level = org[:planned_lvl]
+    bind.save
+  end
+
+  def update_freeform course, org
+    unit = Unit.find_or_create_by(code: org[:unit][:code])
+    unit.credits = org[:unit][:credits]
+    unit.abbrev = org[:unit][:abbrev]
+    unit.freeform = true
+    unit.freeform_period = org[:unit][:freeform_period] unless org[:freeform] == :elective
+    unit.save
+
+    bind = CourseUnit.find_or_initialize_by(course: course, unit: unit)
+    bind.optional = org[:course_unit][:optional]
+    bind.planned_period = org[:course_unit][:planned]
+    bind.planned_level = org[:course_unit][:planned_lvl]
     bind.save
   end
 

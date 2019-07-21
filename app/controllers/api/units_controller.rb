@@ -1,7 +1,7 @@
 module Api
   class UnitsController < ApplicationController
     def index
-      cache_render "units_index", Unit.all, brief: true
+      cache_render "units_index", Unit.where.not(freeform: true), brief: true
     end
 
     def show

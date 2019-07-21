@@ -4,9 +4,10 @@ class Unit < ApplicationRecord
 
   has_many :unit_availabilities
 
-  scope :search, -> (name) { 
-    where("lower(code) like ?", "%#{name.downcase}%")
-    .or(where("lower(name) like ?", "%#{name.downcase}%"))
-    .or(where(abbrev: name.upcase))
+  scope :search, -> (name) {
+    where.not(freeform: true)
+    .where("lower(code) like ?", "%#{name.downcase}%")
+      .or(where("lower(name) like ?", "%#{name.downcase}%"))
+      .or(where(abbrev: name.upcase))
   }
 end

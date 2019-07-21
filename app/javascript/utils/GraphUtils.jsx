@@ -11,7 +11,7 @@ const colour_error = "#fa8e8e"
 class GraphGenerator {
   constructor(units) {
     this.reset()
-    this.units = units
+    this.units = units.filter(x => !x.unit.freeform)
   }  
 
   reset = () => {
