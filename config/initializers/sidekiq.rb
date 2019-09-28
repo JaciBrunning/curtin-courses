@@ -2,7 +2,7 @@ require 'sidekiq/web'
 require 'sidekiq/enqueuer'
 
 Sidekiq::Enqueuer.configure do |cfg|
-  cfg.jobs = [UpdateCoursesIndexJob, UpdateSingleCourseJob]
+  cfg.jobs = [UpdateCoursesIndexJob, UpdateSingleCourseJob, CleanDbJob]
 end
 
 unless Rails.env.development?
