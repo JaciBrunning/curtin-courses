@@ -199,7 +199,7 @@ class UpdateSingleCourseJob < ApplicationJob
     avails = []
     doc.css("table.compressed tr").each do |row|
       cols = row.css("td")
-      if cols.size == 8
+      if cols.size == 6
         avails << {
           year: cols[0].text,
           location: cols[1].text,
