@@ -160,7 +160,7 @@ GEM
     prometheus-client (0.9.0)
       quantile (~> 0.2.1)
     public_suffix (3.1.1)
-    puma (3.12.1)
+    puma (3.12.3)
     quantile (0.2.1)
     rack (2.0.7)
     rack-protection (2.0.5)
@@ -294,7 +294,7 @@ DEPENDENCIES
   nokogiri (~> 1.10.3)
   pg (>= 0.18, < 2.0)
   prometheus-client
-  puma (~> 3.11)
+  puma (~> 3.12)
   rails (~> 5.2.3)
   rails-fontawesome5
   react-rails
