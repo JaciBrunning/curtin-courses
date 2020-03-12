@@ -7,11 +7,11 @@ end
 
 unless Rails.env.development?
   Sidekiq.configure_server do |cfg|
-    cfg.redis = { url: 'redis://redis:6379/1' }  
+    cfg.redis = { url: ENV.fetch("REDIS_URL") {'redis://redis:6379/1'} }  
   end
 
   Sidekiq.configure_client do |cfg|
-    cfg.redis = { url: 'redis://redis:6379/1' }
+    cfg.redis = { url: ENV.fetch("REDIS_URL") {'redis://redis:6379/1'} }
   end
 
   Sidekiq::Web.use(Rack::Auth::Basic) do |user, pass|

@@ -47,7 +47,7 @@ Rails.application.configure do
   # config.action_cable.allowed_request_origins = [ 'http://example.com', /http:\/\/example.*/ ]
 
   # Force all access to the app over SSL, use Strict-Transport-Security, and use secure cookies.
-  config.force_ssl = ENV['CURTIN_COURSES_INSECURE'].present? ? false : true
+  config.force_ssl = ENV['NO_SSL'].present? ? false : true
 
   # Use the lowest log level to ensure availability of diagnostic information
   # when problems arise.
@@ -95,7 +95,7 @@ Rails.application.configure do
   config.action_mailer.delivery_method = :smtp
 
   config.action_mailer.smtp_settings = {
-    address: 'mailer', 
+    address: ENV.fetch("MAILER_HOST") {'mailer'}, 
     port: 587, 
     domain: 'imjac.in',
     openssl_verify_mode: OpenSSL::SSL::VERIFY_NONE
