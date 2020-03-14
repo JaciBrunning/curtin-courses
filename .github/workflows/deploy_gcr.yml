@@ -27,6 +27,6 @@ jobs:
     - name: Delete old GCR images
       run: |
         REPO=$(ruby docker.rb get_repo)
-        OLD_IMAGES=$(gcloud container images list-tags $REPO --sort-by=~timestamp --format='get(digest)' | tail -n +4 | awk -v repo=$REPO '{print repo"@"$1}' | xargs)
+        OLD_IMAGES=$(gcloud container images list-tags $REPO --sort-by=~timestamp --format='get(digest)' | tail -n +3 | awk -v repo=$REPO '{print repo"@"$1}' | xargs)
         echo Deleting: $OLD_IMAGES
         gcloud container images delete $OLD_IMAGES
