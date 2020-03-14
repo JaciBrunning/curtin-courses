@@ -24,6 +24,7 @@ jobs:
 
     - run: gcloud auth configure-docker
     - run: ruby docker.rb push
+     
     - name: Delete old GCR images
       run: |
         REPO=$(ruby docker.rb get_repo)
