@@ -7,7 +7,7 @@
     "babel-plugin-transform-react-remove-prop-types": "^0.4.24",
     "bootstrap": "^4.3.1",
     "immutability-helper": "^3.0.1",
-    "jquery": "^3.4.1",
+    "jquery": "^3.5.0",
     "lodash": "^4.17.15",
     "md5": "^2.2.1",
     "popper.js": "^1.15.0",
