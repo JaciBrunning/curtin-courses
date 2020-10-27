@@ -87,7 +87,7 @@ class UpdateSingleCourseJob < ApplicationJob
               credits: creditVal,
               abbrev: "OPT",
               freeform_period: (type == :optional ? 
-                "Optional Units to Select from in #{planned}" 
+                "Options to Select from in #{planned}" 
                 : nil)
             },
             course_unit: {
