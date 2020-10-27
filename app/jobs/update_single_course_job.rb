@@ -77,7 +77,7 @@ class UpdateSingleCourseJob < ApplicationJob
       elsif td.count == 4
         # Is an optional or elective unit
         creditVal = td[3].text.to_f
-        type = td[1].text.include?("ELECTIVE") ? :elective : td[1].text.include?("OPTIONAL") ? :optional : nil
+        type = td[1].text.include?("ELECTIVE") ? :elective : td[1].text.include?("OPTION") ? :optional : nil
         code = Base64.encode64(Digest::MD5.hexdigest("#{url}/#{planned}/#{type}")).strip[0..7]
         if type
           entries << {
