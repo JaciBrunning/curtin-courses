@@ -6,7 +6,7 @@ require 'digest'
 class UpdateSingleCourseJob < ApplicationJob
   queue_as :default
 
-  OPTIONAL_REGEX = /(Optional.+)/
+  OPTIONAL_REGEX = /(Option.+)/
   PLANNED_REGEX = /(Year.+)/
   UNIT_TITLE_REGEX = /([A-Z0-9-]{6,10}).\([a-zA-Z\.0-9]+\).(.+)/
   UNIT_MODIFICATION_BOUND = 1.day
