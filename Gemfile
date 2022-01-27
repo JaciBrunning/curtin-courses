@@ -12,7 +12,7 @@ gem 'uglifier', '3.0.0'
 gem 'turbolinks', '~> 5'
 gem 'jbuilder', '~> 2.5'
 
-gem 'sidekiq', '5.2.6'
+gem 'sidekiq', '6.4.0'
 gem 'sidekiq-enqueuer', '2.1.1'
 
 gem "google-cloud-storage", require: false
