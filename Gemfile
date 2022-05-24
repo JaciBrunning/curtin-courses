@@ -21,7 +21,7 @@ gem 'bootsnap', '>= 1.1.0', require: false
 
 gem 'prometheus-client'
 
-gem 'nokogiri', '~> 1.10.8'
+gem 'nokogiri', '~> 1.13.6'
 gem 'active_model_serializers', '~> 0.10.9'
 gem 'goldiloader', '~> 3.1.1'
 
